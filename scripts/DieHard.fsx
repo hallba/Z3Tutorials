@@ -28,9 +28,10 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
     //Empty three into five (pair with emptyThree)
     let emptyThreeIntoFive = ctx.MkEq(fiveState',ctx.MkAdd(threeState,fiveState))
     //Fill five with some of three (pair with fillFive)
-    let fillFivewithThree = ctx.MkEq(threeState',ctx.MkSub(threeState,ctx.MkSub(zFive,fiveState)))
+    let pourThreeIntoFive = ctx.MkEq(threeState',ctx.MkSub(threeState,ctx.MkSub(zFive,fiveState)))
     //Fill three with some of five (pair with fillThree)
-    let fillThreewithFive = ctx.MkEq(fiveState',ctx.MkSub(fiveState,ctx.MkSub(zThree,threeState)))
+    let pourFiveIntoThree = ctx.MkEq(fiveState',ctx.MkSub(fiveState,ctx.MkSub(zThree,threeState)))
+    //Transfer contents of partially empty flasks
     let topUpThree = ctx.MkEq(threeState',fiveState)
 
     //List all of the possible updates, turn them into constraints, add them to the solver
@@ -40,8 +41,8 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
                             ctx.MkAnd(doNothingFive,fillThree)
                             ctx.MkAnd(emptyFive,doNothingThree)
                             ctx.MkAnd(emptyThreeIntoFive,emptyThree)
-                            ctx.MkAnd(fillFivewithThree,fillFive)
-                            ctx.MkAnd(fillThreewithFive,ctx.MkOr(topUpThree,fillThree))
+                            ctx.MkAnd(pourThreeIntoFive,fillFive)
+                            ctx.MkAnd(pourFiveIntoThree,fillThree)
                             |]
 
     let constraints = ctx.MkOr(possibleUpdates)
