@@ -41,10 +41,19 @@ let answer (ctx:Context) (s:Solver) (variables:IntExpr []) =
         s.Pop()
         "No answer- unsat\n"
     | Status.SATISFIABLE -> 
-        Printf.printf "Answer- sat\n"
-        let result = sprintf  "A %O B %O\n" (s.Model.ConstInterp(variables.[0])) (s.Model.ConstInterp(variables.[1]))
-        s.Pop()
-        result
+        let aState = s.Model.ConstInterp(variables.[0])
+        let bState = s.Model.ConstInterp(variables.[1])
+        let result = sprintf  "Answer- sat\nA %O B %O\n" aState bState
+        s.Add (ctx.MkNot(ctx.MkAnd(ctx.MkEq(variables.[0],aState),ctx.MkEq(variables.[1],bState))))
+        let r' = s.Check([||])
+        match r' with
+        | Status.UNSATISFIABLE ->
+            s.Pop()
+            result + "No other solutions\n"
+        | Status.SATISFIABLE ->
+            s.Pop()
+            result + (sprintf "Alternative answer\nA %O B %O\n" (s.Model.ConstInterp(variables.[0])) (s.Model.ConstInterp(variables.[1])))
+        | _ -> failwith "Unknown fail"
     | _ -> failwith "Unknown fail"
 let main () = 
     let ctx = new Context()
