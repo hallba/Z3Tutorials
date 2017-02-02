@@ -7,6 +7,8 @@ open Microsoft.Z3
 let assertUpdate (ctx:Context) (s:Solver) t t' = 
     //Convienience integers
     let zZero = ctx.MkInt(0)
+    let zTwo = ctx.MkInt(2)
+    let zFour = ctx.MkInt(4)
     let zFive = ctx.MkInt(5)
     let zThree = ctx.MkInt(3)
 
@@ -25,14 +27,8 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
     let emptyThree = ctx.MkEq(threeState',zZero)
 
     //Complex updates; fill three from five, fill five from three
-    //Empty three into five (pair with emptyThree)
-    let emptyThreeIntoFive = ctx.MkEq(fiveState',ctx.MkAdd(threeState,fiveState))
-    //Fill five with some of three (pair with fillFive)
-    let pourThreeIntoFive = ctx.MkEq(threeState',ctx.MkSub(threeState,ctx.MkSub(zFive,fiveState)))
-    //Fill three with some of five (pair with fillThree)
-    let pourFiveIntoThree = ctx.MkEq(fiveState',ctx.MkSub(fiveState,ctx.MkSub(zThree,threeState)))
-    //Transfer contents of partially empty flasks
-    let topUpThree = ctx.MkEq(threeState',fiveState)
+    //You can transfer only if one jug ends up full or empty
+    let transfer = ctx.MkEq(ctx.MkAdd(fiveState,threeState),ctx.MkAdd(fiveState',threeState'))
 
     //List all of the possible updates, turn them into constraints, add them to the solver
     let possibleUpdates = [|
@@ -40,9 +36,10 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
                             ctx.MkAnd(fillFive,doNothingThree)
                             ctx.MkAnd(doNothingFive,fillThree)
                             ctx.MkAnd(emptyFive,doNothingThree)
-                            ctx.MkAnd(emptyThreeIntoFive,emptyThree)
-                            ctx.MkAnd(pourThreeIntoFive,fillFive)
-                            ctx.MkAnd(pourFiveIntoThree,fillThree)
+                            ctx.MkAnd(transfer,emptyFive)
+                            ctx.MkAnd(transfer,emptyThree)
+                            ctx.MkAnd(transfer,fillFive)
+                            ctx.MkAnd(transfer,fillThree)
                             |]
 
     let constraints = ctx.MkOr(possibleUpdates)
@@ -68,19 +65,23 @@ let assertBounds (ctx:Context) (s:Solver) t =
 let step ctx s t t' =
     assertUpdate ctx s t t'
     assertBounds ctx s t
+    assertBounds ctx s t'
 
-let initial (ctx:Context) (s:Solver) t = 
+let setState (ctx:Context) (s:Solver) t (three:int) (five:int) = 
     //Convienience integers
-    let zZero = ctx.MkInt(0)
+    let zThree = ctx.MkInt(three)
+    let zFive = ctx.MkInt(five)
     //Create the variables
     let fiveState = ctx.MkIntConst(sprintf "Five-%d" t)
     let threeState = ctx.MkIntConst(sprintf "Three-%d" t)
     let constraints = ctx.MkAnd([|
-                                    ctx.MkEq(fiveState,zZero)
-                                    ctx.MkEq(threeState,zZero)
+                                    ctx.MkEq(fiveState,zFive)
+                                    ctx.MkEq(threeState,zThree)
                                 |])
     s.Add(constraints)
 
+let initial ctx s t =
+    setState ctx s t 0 0
 let final (ctx:Context) (s:Solver) t = 
     let zFour = ctx.MkInt(4)
     let fiveState = ctx.MkIntConst(sprintf "Five-%d" t)
