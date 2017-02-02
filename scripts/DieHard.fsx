@@ -4,7 +4,7 @@
 open Microsoft.Z3 
 
 //You have a 5 litre jug, a 3 litre jug and as much water as you want. How do you get 4 litres of water exactly?
-let assert_update (ctx:Context) (s:Solver) t t' = 
+let assertUpdate (ctx:Context) (s:Solver) t t' = 
     //Convienience integers
     let zZero = ctx.MkInt(0)
     let zFive = ctx.MkInt(5)
@@ -25,40 +25,86 @@ let assert_update (ctx:Context) (s:Solver) t t' =
     let emptyThree = ctx.MkEq(threeState',zZero)
 
     //Complex updates; fill three from five, fill five from three
-    
+    //Empty three into five (pair with emptyThree)
+    let emptyThreeIntoFive = ctx.MkEq(fiveState',ctx.MkAdd(threeState,fiveState))
+    //Fill five with some of three (pair with fillFive)
+    let fillFivewithThree = ctx.MkEq(threeState',ctx.MkSub(threeState,ctx.MkSub(zFive,fiveState)))
+    //Fill three with some of five (pair with fillThree)
+    let fillThreewithFive = ctx.MkEq(fiveState',ctx.MkSub(fiveState,ctx.MkSub(zThree,threeState)))
+
     //List all of the possible updates, turn them into constraints, add them to the solver
     let possibleUpdates = [|
                             ctx.MkAnd(doNothingFive,fillThree)
                             ctx.MkAnd(fillFive,doNothingThree)
                             ctx.MkAnd(doNothingFive,fillThree)
                             ctx.MkAnd(emptyFive,doNothingThree)
+                            ctx.MkAnd(emptyThreeIntoFive,emptyThree)
+                            ctx.MkAnd(fillFivewithThree,fillFive)
+                            ctx.MkAnd(fillThreewithFive,fillThree)
                             |]
 
     let constraints = ctx.MkOr(possibleUpdates)
     s.Add(constraints)
-    ()
+
+let assertBounds (ctx:Context) (s:Solver) t =
+    //Convienience integers
+    let zZero = ctx.MkInt(0)
+    let zFive = ctx.MkInt(5)
+    let zThree = ctx.MkInt(3)
+    //Create the variables
+    let fiveState = ctx.MkIntConst(sprintf "Five-%d" t)
+    let threeState = ctx.MkIntConst(sprintf "Three-%d" t)
+
+    let constraints = ctx.MkAnd([|
+                                    ctx.MkGe(fiveState,zZero)
+                                    ctx.MkLe(fiveState,zFive)
+                                    ctx.MkGe(threeState,zZero)
+                                    ctx.MkLe(threeState,zThree)
+                                    |])
+    s.Add(constraints)
 
 let step ctx s t t' =
-    assert_update ctx s t t'
-    assert_bounds ctx s
+    assertUpdate ctx s t t'
+    assertBounds ctx s t
 
+let initial (ctx:Context) (s:Solver) t = 
+    //Convienience integers
+    let zZero = ctx.MkInt(0)
+    //Create the variables
+    let fiveState = ctx.MkIntConst(sprintf "Five-%d" t)
+    let threeState = ctx.MkIntConst(sprintf "Three-%d" t)
+    let constraints = ctx.MkAnd([|
+                                    ctx.MkEq(fiveState,zZero)
+                                    ctx.MkEq(threeState,zZero)
+                                |])
+    s.Add(constraints)
+
+let final (ctx:Context) (s:Solver) t = 
+    let zFour = ctx.MkInt(4)
+    let fiveState = ctx.MkIntConst(sprintf "Five-%d" t)
+    s.Add(ctx.MkEq(fiveState,zFour))
 let main maxBound = 
-    let rec core ctx =
-        ()
     let ctx = new Context()
-
-    //We have two variables, A and B, and they are each either 2 or 1, or both 2, or both 1
-    // let variables = [|ctx.MkIntConst("A");ctx.MkIntConst("B")|]
-    // let values = [|ctx.MkInt(2);ctx.MkInt(1)|]
-    // let constraints = [|
-    //     ctx.MkOr([|ctx.MkEq(variables.[0],values.[0]);ctx.MkEq(variables.[0],values.[1])|]);
-    //     ctx.MkOr([|ctx.MkEq(variables.[1],values.[0]);ctx.MkEq(variables.[1],values.[1])|]);
-    //     |]
-    // let s = ctx.MkSolver()
-    // s.Add(ctx.MkAnd(constraints))
-    // //Must be satisfiable
-    // printf "%s" (sanity_check ctx s variables)
-    // //Paradox- must not be satisfiable
-    // printf "%s" (paradox ctx s variables)
-    // //A is less than B- What is the answer?
-    // printf "%s" (answer ctx s variables)
+    let s = ctx.MkSolver()
+    initial ctx s 0
+    let rec core i =
+        if i = maxBound then printf "No results within bound of %d\n" maxBound else 
+            step ctx s (i-1) i
+            s.Push()
+            final ctx s i
+            let r = s.Check([||])
+            match r with 
+            | Status.UNSATISFIABLE ->
+                s.Pop()
+                printf "Unsat- No answer with a bound of %d\n" i
+                core (i+1)
+            | Status.SATISFIABLE ->
+                s.Pop()
+                printf "Sat- Got a result at bound %d\n" i
+                printf "3Jug\t5Jug\n"
+                for t=0 to i do
+                    let threeState = s.Model.ConstInterp(ctx.MkIntConst(sprintf "Three-%d" t))
+                    let fiveState = s.Model.ConstInterp(ctx.MkIntConst(sprintf "Five-%d" t))
+                    printf "%O\t%O\n" threeState fiveState
+            | _ -> failwith "Unknown response from Z3"
+    core 1
