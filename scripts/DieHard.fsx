@@ -31,6 +31,7 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
     let fillFivewithThree = ctx.MkEq(threeState',ctx.MkSub(threeState,ctx.MkSub(zFive,fiveState)))
     //Fill three with some of five (pair with fillThree)
     let fillThreewithFive = ctx.MkEq(fiveState',ctx.MkSub(fiveState,ctx.MkSub(zThree,threeState)))
+    let topUpThree = ctx.MkEq(threeState',fiveState)
 
     //List all of the possible updates, turn them into constraints, add them to the solver
     let possibleUpdates = [|
@@ -40,7 +41,7 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
                             ctx.MkAnd(emptyFive,doNothingThree)
                             ctx.MkAnd(emptyThreeIntoFive,emptyThree)
                             ctx.MkAnd(fillFivewithThree,fillFive)
-                            ctx.MkAnd(fillThreewithFive,fillThree)
+                            ctx.MkAnd(fillThreewithFive,ctx.MkOr(topUpThree,fillThree))
                             |]
 
     let constraints = ctx.MkOr(possibleUpdates)
