@@ -33,8 +33,8 @@ let assertUpdate (ctx:Context) (s:Solver) t t' =
     //List all of the possible updates, turn them into constraints, add them to the solver
     let possibleUpdates = [|
                             ctx.MkAnd(doNothingFive,fillThree)
+                            ctx.MkAnd(doNothingFive,emptyThree)
                             ctx.MkAnd(fillFive,doNothingThree)
-                            ctx.MkAnd(doNothingFive,fillThree)
                             ctx.MkAnd(emptyFive,doNothingThree)
                             ctx.MkAnd(transfer,emptyFive)
                             ctx.MkAnd(transfer,emptyThree)
