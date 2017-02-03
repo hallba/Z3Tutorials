@@ -3,6 +3,9 @@
 
 open Microsoft.Z3 
 
+// Who keeps the fish?
+// 5 people, with different nationalities, different preferred drinks and cigars, and different pets live 
+// in the same street. Each house has a different colour. Given these hints, who has the fish?
 // From
 // https://udel.edu/~os/riddle.html
 
