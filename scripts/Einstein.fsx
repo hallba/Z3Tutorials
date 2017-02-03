@@ -29,23 +29,39 @@ let main () =
     let distinctSmo = mk_distinct ctx [smokes.[0];smokes.[1];smokes.[2];smokes.[3];smokes.[4]]
     let distinctPet = mk_distinct ctx [pets.[0];pets.[1];pets.[2];pets.[3];pets.[4]]
     //Now look at the facts (NB houses read 1 to 5 left to right)
+    //the Brit lives in the red house
     let britImpliesRed = ctx.MkEq(ctx.MkIntConst("Briton"),ctx.MkIntConst("Red"))
+    //the Swede keeps dogs as pets
     let swedeImpliesDogs = ctx.MkEq(ctx.MkIntConst("Swede"),ctx.MkIntConst("Dogs"))
+    //the Dane drinks tea
     let daneImpliesTea = ctx.MkEq(ctx.MkIntConst("Dane"),ctx.MkIntConst("Tea"))
+    //the green house is on the left of the white house
     let greenImpliesWhiteMinusOne = ctx.MkEq(ctx.MkIntConst("White"),ctx.MkAdd(ctx.MkIntConst("Green"),ctx.MkInt(1)))
+    //the green house's owner drinks coffee
     let greenImpliesCoffee = ctx.MkEq(ctx.MkIntConst("Green"),ctx.MkIntConst("Coffee"))
+    //the person who smokes Pall Mall rears birds
     let pallmallImpliesBirds = ctx.MkEq(ctx.MkIntConst("PallMall"),ctx.MkIntConst("Birds"))
+    //the owner of the yellow house smokes Dunhill
     let yellowImpliesDunhill = ctx.MkEq(ctx.MkIntConst("Yellow"),ctx.MkIntConst("Dunhill"))
+    //the man living in the center house drinks milk
     let middleImpliesMilk = ctx.MkEq(ctx.MkIntConst("Milk"),ctx.MkInt(3))
+    //the Norwegian lives in the first house
     let norwegianImpliesOne = ctx.MkEq(ctx.MkIntConst("Norwegian"),ctx.MkInt(1))
+    //the man who smokes blends lives next to the one who keeps cats
     let blendImpliesCatsNeighbour = ctx.MkOr(ctx.MkEq(ctx.MkIntConst("Blend"),ctx.MkAdd(ctx.MkIntConst("Cats"),ctx.MkInt(1))),ctx.MkEq(ctx.MkIntConst("Blend"),ctx.MkSub(ctx.MkIntConst("Cats"),ctx.MkInt(1))))
+    //the man who keeps horses lives next to the man who smokes Dunhill
     let horsesImpliesDunhillNeighbour = ctx.MkOr(ctx.MkEq(ctx.MkIntConst("Horses"),ctx.MkAdd(ctx.MkIntConst("Dunhill"),ctx.MkInt(1))),ctx.MkEq(ctx.MkIntConst("Horses"),ctx.MkSub(ctx.MkIntConst("Dunhill"),ctx.MkInt(1))))
+    //the owner who smokes BlueMaster drinks beer
     let bluemasterImpliesBeer = ctx.MkEq(ctx.MkIntConst("BlueMaster"),ctx.MkIntConst("Beer"))
+    //the German smokes Prince
     let germanImpliesPrince = ctx.MkEq(ctx.MkIntConst("German"),ctx.MkIntConst("Prince"))
+    //the Norwegian lives next to the blue house
     let norwegianImpliesBlueNeighbour = ctx.MkOr(ctx.MkEq(ctx.MkIntConst("Norwegian"),ctx.MkAdd(ctx.MkIntConst("Blue"),ctx.MkInt(1))),ctx.MkEq(ctx.MkIntConst("Norwegian"),ctx.MkSub(ctx.MkIntConst("Blue"),ctx.MkInt(1))))
+    //the man who smokes blend has a neighbor who drinks water
     let blendImpliesWaterNeighbour = ctx.MkOr(ctx.MkEq(ctx.MkIntConst("Blend"),ctx.MkAdd(ctx.MkIntConst("Water"),ctx.MkInt(1))),ctx.MkEq(ctx.MkIntConst("Blend"),ctx.MkSub(ctx.MkIntConst("Water"),ctx.MkInt(1))))
     let s = ctx.MkSolver()
     let constraints = ctx.MkAnd( [| streetRange
+                                    //If you don't explictly constrain the values to be different you don't get a model
                                     distinctNat
                                     distinctCol
                                     distinctDri
@@ -60,12 +76,12 @@ let main () =
                                     yellowImpliesDunhill;
                                     middleImpliesMilk;
                                     norwegianImpliesOne
-                                    blendImpliesCats
-                                    //horsesImpliesDunhillNeighbour
+                                    blendImpliesCatsNeighbour
+                                    horsesImpliesDunhillNeighbour
                                     bluemasterImpliesBeer
                                     germanImpliesPrince
                                     norwegianImpliesBlueNeighbour
-                                    // blendImpliesWaterNeighbour 
+                                    blendImpliesWaterNeighbour 
                                     |] )
     s.Add(constraints)
     match s.Check([||]) with
