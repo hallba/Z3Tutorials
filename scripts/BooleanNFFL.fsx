@@ -4,6 +4,10 @@
 open Microsoft.Z3 
 
 //Prove stability in a negative feedforward loop (Perfect adaption motif)
+// Input -> A
+// A -> B 
+// A -> Output
+// B -| Output
 let makeVariable (ctx:Context) name time =
     ctx.MkBoolConst(sprintf "%s-%d" name time)
 
@@ -77,7 +81,7 @@ let findCycles bound =
         statesAreEqual ctx s 0 i
         match s.Check() with 
         | Status.SATISFIABLE -> printf "Found cycle of length %d\n" i; Cycle
-        | Status.UNSATISFIABLE -> s.Pop(); if i < bound then core (i+1) bound else Stable
+        | Status.UNSATISFIABLE -> s.Pop(); if i < bound then core (i+1) bound else printf "\n"; Stable
         | _ -> failwith "Unknown result"
     core 1 bound
 
