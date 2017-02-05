@@ -10,7 +10,7 @@ open Microsoft.Z3
 let geneCreate (ctx:Context) name t position states =
     ctx.MkConst((sprintf "%s-%d-%d" name t position),states)
 
-let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position altPosition = 
+let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position altPosition isInput = 
     let notch = geneCreate ctx "Notch" t position states
     let notch' = geneCreate ctx "Notch" t' position states
     let is = geneCreate ctx "IS" t position states
@@ -30,9 +30,9 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
     let lsN = geneCreate ctx "LS" t altPosition states
     
     let let60Update = ctx.MkEq(let60',is) 
-    let isUpdate = ctx.MkEq(is',states.Consts.[0])
+    let isUpdate = ctx.MkEq(is',isInput)
     let notchUpdate = ctx.MkEq(notch',lsN)
-    let lsUpdate = ctx.MkEq(ls',mapk)
+    let lsUpdate = ctx.MkEq(ls',mapk')
     let mapkUpdate =   ctx.MkAnd( [|
                                     //No notch inhibition
                                     ctx.MkImplies(ctx.MkEq(let60,states.Consts.[0]),ctx.MkEq(mapk',states.Consts.[0]))
@@ -67,8 +67,8 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' =
     let clock' = ctx.MkIntConst(sprintf "Clock-%d" t')
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
-    let cell0Update = cellUpdate ctx states fates t t' 0 1
-    let cell1Update = cellUpdate ctx states fates t t' 1 0
+    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[0]
+    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
     s.Add(ctx.MkAnd([|timer;cell0Update;cell1Update|]))
 
 let initCell (ctx:Context) position t states initState fates initFate =
@@ -97,7 +97,7 @@ let main bound =
     let ctx = new Context ()
     let genes = [|"IS";"LS";"Notch";"LET60";"MAPK";"Fate";"Moved"|]
     let activity = [|"Low";"Medium";"High"|] 
-    let phenotypes = [|"None";"Primary";"Secondary";"Teritary"|]
+    let phenotypes = [|"None";"1'";"2'";"3'"|]
     let states = ctx.MkEnumSort("States",activity)
     let fates = ctx.MkEnumSort("Fates",phenotypes)
     let stateMap = Array.mapi (fun i item -> (item,i)) activity |> Map.ofArray
@@ -110,6 +110,7 @@ let main bound =
                             for i = 0 to bound do
                                 printf "Time: %O\nMAPK-L :\t%O\tMAPK-R :\t%O\n" (s.Model.Eval((ctx.MkIntConst(sprintf "Clock-%d" i )),true)) (s.Model.Eval(geneCreate ctx "MAPK" i 0 states,true)) (s.Model.Eval(geneCreate ctx "MAPK" i 1 states,true))
                                 printf "Notch-L:\t%O\tNotch-R:\t%O\n" (s.Model.Eval(geneCreate ctx "Notch" i 0 states,true)) (s.Model.Eval(geneCreate ctx "Notch" i 1 states,true))
+                                printf "LS-L   :\t%O\tLS   -R:\t%O\n" (s.Model.Eval(geneCreate ctx "LS" i 0 states,true)) (s.Model.Eval(geneCreate ctx "LS" i 1 states,true))
                                 printf "Fate-L :\t%O\tFate-R :\t%O\n" (s.Model.Eval(geneCreate ctx "Fate" i 0 fates,true)) (s.Model.Eval(geneCreate ctx "Fate" i 1 fates,true))
 
     | Status.UNSATISFIABLE -> printf "Unsat\n"
