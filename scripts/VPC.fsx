@@ -27,11 +27,11 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
     // let move = ctx.MkBoolConst(sprintf "Move-%d-%d" t position)
     // let move' = ctx.MkBoolConst(sprintf "Move-%d-%d" t' position)
     //LS from other cell
-    let lsN = geneCreate ctx "LS" t altPosition states
+    let lsN' = geneCreate ctx "LS" t' altPosition states
     
     let let60Update = ctx.MkEq(let60',is) 
     let isUpdate = ctx.MkEq(is',isInput)
-    let notchUpdate = ctx.MkEq(notch',lsN)
+    let notchUpdate = ctx.MkEq(notch',lsN')
     let lsUpdate = ctx.MkEq(ls',mapk')
     let mapkUpdate =   ctx.MkAnd( [|
                                     //No notch inhibition
