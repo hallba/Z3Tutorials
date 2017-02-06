@@ -108,7 +108,7 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let clock' = ctx.MkIntConst(sprintf "Clock-%d" t')
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
-    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[0]
+    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[2]
     let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
     let cell0Static = cellStatic ctx t t' 0 1 states fates
     let cell1Static = cellStatic ctx t t' 1 0 states fates
