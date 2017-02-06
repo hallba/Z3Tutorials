@@ -31,13 +31,19 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
     
     let let60Update = ctx.MkEq(let60',is) 
     let isUpdate = ctx.MkEq(is',isInput)
-    let notchUpdate = ctx.MkEq(notch',lsN')
+    let notchUpdate =   ctx.MkAnd([|
+                                    ctx.MkImplies(ctx.MkNot(ctx.MkEq(mapk',states.Consts.[2])),ctx.MkEq(notch',lsN'))
+                                    ctx.MkImplies((ctx.MkEq(mapk',states.Consts.[2])),ctx.MkEq(notch',states.Consts.[0])) |] )
     let lsUpdate = ctx.MkEq(ls',mapk')
     let mapkUpdate =   ctx.MkAnd( [|
-                                    //No notch inhibition
-                                    ctx.MkImplies(ctx.MkEq(let60,states.Consts.[0]),ctx.MkEq(mapk',states.Consts.[0]))
-                                    ctx.MkImplies(ctx.MkEq(let60,states.Consts.[1]),ctx.MkEq(mapk',states.Consts.[1]))
-                                    ctx.MkImplies(ctx.MkEq(let60,states.Consts.[2]),ctx.MkEq(mapk',states.Consts.[2]))
+                                    // //No notch inhibition
+                                    // ctx.MkImplies(ctx.MkEq(let60,states.Consts.[0]),ctx.MkEq(mapk',states.Consts.[0]))
+                                    // ctx.MkImplies(ctx.MkEq(let60,states.Consts.[1]),ctx.MkEq(mapk',states.Consts.[1]))
+                                    // ctx.MkImplies(ctx.MkEq(let60,states.Consts.[2]),ctx.MkEq(mapk',states.Consts.[2]))
+                                    ctx.MkImplies(ctx.MkEq(notch,states.Consts.[2]),ctx.MkEq(mapk',states.Consts.[0]))
+                                    ctx.MkImplies(ctx.MkAnd(ctx.MkNot(ctx.MkEq(notch,states.Consts.[2])),ctx.MkEq(let60,states.Consts.[0])),ctx.MkEq(mapk',states.Consts.[0]))
+                                    ctx.MkImplies(ctx.MkAnd(ctx.MkNot(ctx.MkEq(notch,states.Consts.[2])),ctx.MkEq(let60,states.Consts.[1])),ctx.MkEq(mapk',states.Consts.[1]))
+                                    ctx.MkImplies(ctx.MkAnd(ctx.MkNot(ctx.MkEq(notch,states.Consts.[2])),ctx.MkEq(let60,states.Consts.[2])),ctx.MkEq(mapk',states.Consts.[2]))
                         |] )
     
     let fateUpdate =    ctx.MkAnd([|
@@ -68,7 +74,7 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' =
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
     let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[0]
-    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
+    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[0]
     s.Add(ctx.MkAnd([|timer;cell0Update;cell1Update|]))
 
 let initCell (ctx:Context) position t states initState fates initFate =
