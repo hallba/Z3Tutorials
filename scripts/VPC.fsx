@@ -7,9 +7,13 @@ open Microsoft.Z3
 //Each cell has IS, LS, Notch, MAPK, LET60, Fate, Moved genes
 //The activity of Notch is determined by the activity of LS *in the neighbouring cell*
 
+type concurrency = Sync | Async | BoundedAsync 
+
 let geneCreate (ctx:Context) name t position states =
     ctx.MkConst((sprintf "%s-%d-%d" name t position),states)
 
+let moveMarker (ctx:Context) t position =
+    ctx.MkBoolConst(sprintf "Move-%d-%d" t position)
 let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position altPosition isInput = 
     let notch = geneCreate ctx "Notch" t position states
     let notch' = geneCreate ctx "Notch" t' position states
@@ -29,6 +33,11 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
     //LS from other cell
     let lsN' = geneCreate ctx "LS" t' altPosition states
     
+    //Bounded asynchrony markers
+    let move  = moveMarker ctx t  position
+    let move' = moveMarker ctx t' position
+    let moveUpdate = ctx.MkAnd(ctx.MkEq(move,ctx.MkFalse()),ctx.MkEq(move',ctx.MkTrue()))
+
     let let60Update = ctx.MkEq(let60',is) 
     let isUpdate = ctx.MkEq(is',isInput)
     let notchUpdate =   ctx.MkAnd([|
@@ -56,26 +65,72 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
                                     //Time runs out -> Tertiary
                                     //ctx.MkImplies(ctx.MkAnd(ctx.MkEq(fates.Consts.[0],fate),ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),ctx.MkNot(ctx.MkEq(notch,states.Consts.[2])),ctx.MkEq(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(5))),ctx.MkEq(fate',fates.Consts.[2]))
                                     ctx.MkImplies(  ctx.MkAnd(
-                                                                ctx.MkEq(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(5)),
+                                                                ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(8)),
                                                                 ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),
                                                                 ctx.MkNot(ctx.MkEq(notch,states.Consts.[2]))
                                                                 ),ctx.MkEq(fate',fates.Consts.[3]))
                                     ctx.MkImplies(  ctx.MkAnd(
-                                                                ctx.MkNot(ctx.MkEq(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(5))),
+                                                                ctx.MkNot(ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(8))),
                                                                 ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),
                                                                 ctx.MkNot(ctx.MkEq(notch,states.Consts.[2]))
                                                                 ),ctx.MkEq(fate',fate))
                                     |])
-    ctx.MkAnd([|let60Update;isUpdate;notchUpdate;lsUpdate;mapkUpdate;fateUpdate|])
+    ctx.MkAnd([|let60Update;isUpdate;notchUpdate;lsUpdate;mapkUpdate;fateUpdate;moveUpdate|])
 
-let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' =
+let cellStatic (ctx:Context) t t' position altPosition states fates=
+    let notch = geneCreate ctx "Notch" t position states
+    let notch' = geneCreate ctx "Notch" t' position states
+    let is = geneCreate ctx "IS" t position states
+    let is' = geneCreate ctx "IS" t' position states
+    let let60 = geneCreate ctx "LET60" t position states
+    let let60' = geneCreate ctx "LET60" t' position states
+    let mapk = geneCreate ctx "MAPK" t position states
+    let mapk' = geneCreate ctx "MAPK" t' position states
+    let ls = geneCreate ctx "LS" t position states
+    let ls' = geneCreate ctx "LS" t' position states
+
+    let lsN' = geneCreate ctx "LS" t' altPosition states
+
+    let fate = geneCreate ctx "Fate" t position fates
+    let fate' = geneCreate ctx "Fate" t' position fates
+
+    let notchUpdate = ctx.MkEq(notch',lsN')
+    let isUpdate = ctx.MkEq(is,is')
+    let let60Update = ctx.MkEq(let60,let60')
+    let mapkUpdate = ctx.MkEq(mapk,mapk')
+    let lsUpdate = ctx.MkEq(ls,ls')
+    let fateUpdate = ctx.MkEq(fate,fate')
+
+    ctx.MkAnd([|notchUpdate;isUpdate;let60Update;mapkUpdate;lsUpdate;fateUpdate|])
+
+let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let clock  = ctx.MkIntConst(sprintf "Clock-%d" t )
     let clock' = ctx.MkIntConst(sprintf "Clock-%d" t')
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
-    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[0]
-    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[0]
-    s.Add(ctx.MkAnd([|timer;cell0Update;cell1Update|]))
+    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[2]
+    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
+    let cell0Static = cellStatic ctx t t' 0 1 states fates
+    let cell1Static = cellStatic ctx t t' 1 0 states fates
+    //Bounded asynchrony
+    let move0  = moveMarker ctx t  0
+    let move1  = moveMarker ctx t  1
+    let move0' = moveMarker ctx t' 0
+    let move1' = moveMarker ctx t' 1
+    let moveReset = ctx.MkAnd([|ctx.MkEq(move0,move1);ctx.MkEq(move0,ctx.MkTrue());ctx.MkEq(move0',move1');ctx.MkEq(move0',ctx.MkFalse())|])
+    //ctx.MkAnd(cell0Update,cell1Update)
+    //let systemUpdate = ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd(cell0Update,cell1Static);ctx.MkAnd(cell0Static,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+    //Synchronous
+    //let systemUpdate = ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+    //Asynchronous
+    //let systemUpdate = ctx.MkOr([|ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+    //Bounded asynchrony
+    let systemUpdate = //ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+                        match c with
+                        | Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+                        | Async ->ctx.MkOr([|ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+                        | BoundedAsync ->ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+    s.Add(ctx.MkAnd([|timer;systemUpdate|]))
 
 let initCell (ctx:Context) position t states initState fates initFate =
     let notch = geneCreate ctx "Notch" t position states
@@ -99,7 +154,15 @@ let init (ctx:Context) (s:Solver) (states:EnumSort) t initState (fates:EnumSort)
     let timer = ctx.MkEq((ctx.MkIntConst(sprintf "Clock-%d" t )),ctx.MkInt(0))
     s.Add(ctx.MkAnd([|cell0;cell1;timer|]))
 
-let main bound = 
+let simPrint (ctx:Context) (s:Solver) bound states fates =
+    for i = 0 to bound do
+        printf "Time: %O\nMAPK-L :\t%O\tMAPK-R :\t%O\n" (s.Model.Eval((ctx.MkIntConst(sprintf "Clock-%d" i )),true)) (s.Model.Eval(geneCreate ctx "MAPK" i 0 states,true)) (s.Model.Eval(geneCreate ctx "MAPK" i 1 states,true))
+        printf "Notch-L:\t%O\tNotch-R:\t%O\n" (s.Model.Eval(geneCreate ctx "Notch" i 0 states,true)) (s.Model.Eval(geneCreate ctx "Notch" i 1 states,true))
+        printf "LS-L   :\t%O\tLS-R   :\t%O\n" (s.Model.Eval(geneCreate ctx "LS" i 0 states,true)) (s.Model.Eval(geneCreate ctx "LS" i 1 states,true))
+        printf "Move-L :\t%O\tMove-R :\t%O\n" (s.Model.Eval(moveMarker ctx i 0)) (s.Model.Eval(moveMarker ctx i 1,true))
+        printf "Fate-L :\t%O\tFate-R :\t%O\n" (s.Model.Eval(geneCreate ctx "Fate" i 0 fates,true)) (s.Model.Eval(geneCreate ctx "Fate" i 1 fates,true))
+
+let main bound c = 
     let ctx = new Context ()
     let genes = [|"IS";"LS";"Notch";"LET60";"MAPK";"Fate";"Moved"|]
     let activity = [|"Low";"Medium";"High"|] 
@@ -110,14 +173,44 @@ let main bound =
     let s = ctx.MkSolver()
     init ctx s states 0 states.Consts.[0] fates fates.Consts.[0]
     for i = 1 to bound do 
-        step ctx s states fates (i-1) i
+        step ctx s states fates (i-1) i c
     match s.Check() with 
-    | Status.SATISFIABLE -> printf "Sat\n"
-                            for i = 0 to bound do
-                                printf "Time: %O\nMAPK-L :\t%O\tMAPK-R :\t%O\n" (s.Model.Eval((ctx.MkIntConst(sprintf "Clock-%d" i )),true)) (s.Model.Eval(geneCreate ctx "MAPK" i 0 states,true)) (s.Model.Eval(geneCreate ctx "MAPK" i 1 states,true))
-                                printf "Notch-L:\t%O\tNotch-R:\t%O\n" (s.Model.Eval(geneCreate ctx "Notch" i 0 states,true)) (s.Model.Eval(geneCreate ctx "Notch" i 1 states,true))
-                                printf "LS-L   :\t%O\tLS   -R:\t%O\n" (s.Model.Eval(geneCreate ctx "LS" i 0 states,true)) (s.Model.Eval(geneCreate ctx "LS" i 1 states,true))
-                                printf "Fate-L :\t%O\tFate-R :\t%O\n" (s.Model.Eval(geneCreate ctx "Fate" i 0 fates,true)) (s.Model.Eval(geneCreate ctx "Fate" i 1 fates,true))
-
+    | Status.SATISFIABLE -> printf "Model sound (sat for unconstrained model up to bound %d). Now searching for fate patterns\n" bound
+                            //simPrint ctx s bound states fates
+                            // s.Add(ctx.MkAnd([|ctx.MkEq(geneCreate ctx "Fate" bound 0 fates,fates.Consts.[3]);ctx.MkEq(geneCreate ctx "Fate" bound 1 fates,fates.Consts.[3])|]))
+                            // match s.Check() with
+                            // | Status.SATISFIABLE -> simPrint ctx s bound states fates
+                            // | Status.UNSATISFIABLE -> printf "Unsat for fate"
+                            // | _ -> failwith "Unknown result"
+                            let endFates =  [   (fates.Consts.[1],fates.Consts.[1]);
+                                                (fates.Consts.[1],fates.Consts.[2]);
+                                                (fates.Consts.[1],fates.Consts.[3]);
+                                                (fates.Consts.[2],fates.Consts.[1]);
+                                                (fates.Consts.[2],fates.Consts.[2]);
+                                                (fates.Consts.[2],fates.Consts.[3]);
+                                                (fates.Consts.[3],fates.Consts.[1]);
+                                                (fates.Consts.[3],fates.Consts.[2]);
+                                                (fates.Consts.[3],fates.Consts.[3]);
+                                                ]
+                            for (i,j) in endFates do
+                                s.Push()
+                                s.Add(ctx.MkAnd([|ctx.MkEq(geneCreate ctx "Fate" bound 0 fates,i);ctx.MkEq(geneCreate ctx "Fate" bound 1 fates,j)|]))
+                                match s.Check() with
+                                | Status.SATISFIABLE -> 
+                                    printf "Sat for fate %O %O\n" i j  
+                                    //simPrint ctx s bound states fates 
+                                    s.Pop() //simPrint ctx s bound states fates
+                                | Status.UNSATISFIABLE -> 
+                                    //printf "Unsat for fate %O %O\n" i j
+                                    s.Pop()
+                                | _ -> failwith "Unknown result"
+                            printf "Complete\n"
     | Status.UNSATISFIABLE -> printf "Unsat\n"
     | _ -> failwith "Unknown\n"
+
+printf "Testing synchronous model\n"
+main 15 Sync
+printf "Testing asynchronous model\n"
+main 15 Async
+printf "Testing bounded asynchronous model\n"
+main 15 BoundedAsync
