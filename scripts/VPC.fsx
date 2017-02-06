@@ -65,12 +65,12 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
                                     //Time runs out -> Tertiary
                                     //ctx.MkImplies(ctx.MkAnd(ctx.MkEq(fates.Consts.[0],fate),ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),ctx.MkNot(ctx.MkEq(notch,states.Consts.[2])),ctx.MkEq(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(5))),ctx.MkEq(fate',fates.Consts.[2]))
                                     ctx.MkImplies(  ctx.MkAnd(
-                                                                ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(8)),
+                                                                ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(10)),
                                                                 ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),
                                                                 ctx.MkNot(ctx.MkEq(notch,states.Consts.[2]))
                                                                 ),ctx.MkEq(fate',fates.Consts.[3]))
                                     ctx.MkImplies(  ctx.MkAnd(
-                                                                ctx.MkNot(ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(8))),
+                                                                ctx.MkNot(ctx.MkGt(ctx.MkIntConst(sprintf "Clock-%d" t ),ctx.MkInt(10))),
                                                                 ctx.MkNot(ctx.MkEq(mapk,states.Consts.[2])),
                                                                 ctx.MkNot(ctx.MkEq(notch,states.Consts.[2]))
                                                                 ),ctx.MkEq(fate',fate))
@@ -108,7 +108,7 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let clock' = ctx.MkIntConst(sprintf "Clock-%d" t')
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
-    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[2]
+    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[0]
     let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
     let cell0Static = cellStatic ctx t t' 0 1 states fates
     let cell1Static = cellStatic ctx t t' 1 0 states fates
