@@ -34,9 +34,9 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
     let lsN' = geneCreate ctx "LS" t' altPosition states
     
     //Bounded asynchrony markers
-    let move  = moveMarker ctx t  position
-    let move' = moveMarker ctx t' position
-    let moveUpdate = ctx.MkAnd(ctx.MkEq(move,ctx.MkFalse()),ctx.MkEq(move',ctx.MkTrue()))
+    // let move  = moveMarker ctx t  position
+    // let move' = moveMarker ctx t' position
+    // let moveUpdate = ctx.MkAnd(ctx.MkEq(move,ctx.MkFalse()),ctx.MkEq(move',ctx.MkTrue()))
 
     let let60Update = ctx.MkEq(let60',is) 
     let isUpdate = ctx.MkEq(is',isInput)
@@ -75,7 +75,7 @@ let cellUpdate (ctx:Context) (states:EnumSort) (fates:EnumSort) t t' position al
                                                                 ctx.MkNot(ctx.MkEq(notch,states.Consts.[2]))
                                                                 ),ctx.MkEq(fate',fate))
                                     |])
-    ctx.MkAnd([|let60Update;isUpdate;notchUpdate;lsUpdate;mapkUpdate;fateUpdate;moveUpdate|])
+    ctx.MkAnd([|let60Update;isUpdate;notchUpdate;lsUpdate;mapkUpdate;fateUpdate|])
 
 let cellStatic (ctx:Context) t t' position altPosition states fates=
     let notch = geneCreate ctx "Notch" t position states
@@ -117,6 +117,8 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let move1  = moveMarker ctx t  1
     let move0' = moveMarker ctx t' 0
     let move1' = moveMarker ctx t' 1
+    let move0Constraint = ctx.MkAnd(ctx.MkEq(move0,ctx.MkFalse()),ctx.MkEq(move0',ctx.MkTrue()))
+    let move1Constraint = ctx.MkAnd(ctx.MkEq(move1,ctx.MkFalse()),ctx.MkEq(move1',ctx.MkTrue()))
     let moveReset = ctx.MkAnd([|ctx.MkEq(move0,move1);ctx.MkEq(move0,ctx.MkTrue());ctx.MkEq(move0',move1');ctx.MkEq(move0',ctx.MkFalse())|])
     //ctx.MkAnd(cell0Update,cell1Update)
     //let systemUpdate = ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd(cell0Update,cell1Static);ctx.MkAnd(cell0Static,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
@@ -127,9 +129,10 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     //Bounded asynchrony
     let systemUpdate = //ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
                         match c with
-                        | Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
-                        | Async ->ctx.MkOr([|ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
-                        | BoundedAsync ->ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+                        //| Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
+                        | Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update)|])
+                        | Async ->ctx.MkXor(cell0Update,cell1Update)
+                        | BoundedAsync ->ctx.MkOr([|ctx.MkAnd([|cell0Update;move0Constraint;cell1Update;move1Constraint|]);ctx.MkAnd([|cell0Update;move0Constraint;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;move1Constraint;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
     s.Add(ctx.MkAnd([|timer;systemUpdate|]))
 
 let initCell (ctx:Context) position t states initState fates initFate =
@@ -209,8 +212,8 @@ let main bound c =
     | _ -> failwith "Unknown\n"
 
 printf "Testing synchronous model\n"
-main 15 Sync
+main 12 Sync
 printf "Testing asynchronous model\n"
-main 15 Async
+main 12 Async
 printf "Testing bounded asynchronous model\n"
-main 15 BoundedAsync
+main 12 BoundedAsync
