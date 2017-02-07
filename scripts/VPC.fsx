@@ -117,6 +117,7 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let move1  = moveMarker ctx t  1
     let move0' = moveMarker ctx t' 0
     let move1' = moveMarker ctx t' 1
+    let ignoreMove = ctx.MkAnd([|ctx.MkEq(move0,move1);ctx.MkEq(move0,move0');ctx.MkEq(move1,move1');ctx.MkEq(move0,ctx.MkFalse())|])
     let move0Constraint = ctx.MkAnd(ctx.MkEq(move0,ctx.MkFalse()),ctx.MkEq(move0',ctx.MkTrue()))
     let move1Constraint = ctx.MkAnd(ctx.MkEq(move1,ctx.MkFalse()),ctx.MkEq(move1',ctx.MkTrue()))
     let moveReset = ctx.MkAnd([|ctx.MkEq(move0,move1);ctx.MkEq(move0,ctx.MkTrue());ctx.MkEq(move0',move1');ctx.MkEq(move0',ctx.MkFalse())|])
@@ -130,8 +131,8 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
     let systemUpdate = //ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|cell0Update;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
                         match c with
                         //| Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
-                        | Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update)|])
-                        | Async ->ctx.MkXor(cell0Update,cell1Update)
+                        | Sync -> ctx.MkAnd([|cell0Update;cell1Update;ignoreMove|])
+                        | Async ->ctx.MkAnd(ctx.MkXor(ctx.MkAnd(cell0Update,cell1Static),ctx.MkAnd(cell1Update,cell0Static)),ignoreMove)
                         | BoundedAsync ->ctx.MkOr([|ctx.MkAnd([|cell0Update;move0Constraint;cell1Update;move1Constraint|]);ctx.MkAnd([|cell0Update;move0Constraint;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;move1Constraint;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
     s.Add(ctx.MkAnd([|timer;systemUpdate|]))
 
@@ -165,7 +166,7 @@ let simPrint (ctx:Context) (s:Solver) bound states fates =
         printf "Move-L :\t%O\tMove-R :\t%O\n" (s.Model.Eval(moveMarker ctx i 0)) (s.Model.Eval(moveMarker ctx i 1,true))
         printf "Fate-L :\t%O\tFate-R :\t%O\n" (s.Model.Eval(geneCreate ctx "Fate" i 0 fates,true)) (s.Model.Eval(geneCreate ctx "Fate" i 1 fates,true))
 
-let main bound c = 
+let main bound c verbose = 
     let ctx = new Context ()
     let genes = [|"IS";"LS";"Notch";"LET60";"MAPK";"Fate";"Moved"|]
     let activity = [|"Low";"Medium";"High"|] 
@@ -179,7 +180,7 @@ let main bound c =
         step ctx s states fates (i-1) i c
     match s.Check() with 
     | Status.SATISFIABLE -> printf "Model sound (sat for unconstrained model up to bound %d). Now searching for fate patterns\n" bound
-                            //simPrint ctx s bound states fates
+                            if verbose then simPrint ctx s bound states fates else ()
                             // s.Add(ctx.MkAnd([|ctx.MkEq(geneCreate ctx "Fate" bound 0 fates,fates.Consts.[3]);ctx.MkEq(geneCreate ctx "Fate" bound 1 fates,fates.Consts.[3])|]))
                             // match s.Check() with
                             // | Status.SATISFIABLE -> simPrint ctx s bound states fates
@@ -201,7 +202,7 @@ let main bound c =
                                 match s.Check() with
                                 | Status.SATISFIABLE -> 
                                     printf "Sat for fate %O %O\n" i j  
-                                    //simPrint ctx s bound states fates 
+                                    if verbose then simPrint ctx s bound states fates else ()
                                     s.Pop() //simPrint ctx s bound states fates
                                 | Status.UNSATISFIABLE -> 
                                     //printf "Unsat for fate %O %O\n" i j
@@ -212,8 +213,8 @@ let main bound c =
     | _ -> failwith "Unknown\n"
 
 printf "Testing synchronous model\n"
-main 12 Sync
+main 12 Sync false
 printf "Testing asynchronous model\n"
-main 12 Async
+main 12 Async false
 printf "Testing bounded asynchronous model\n"
-main 12 BoundedAsync
+main 12 BoundedAsync false
