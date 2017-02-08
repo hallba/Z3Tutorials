@@ -103,13 +103,13 @@ let cellStatic (ctx:Context) t t' position altPosition states fates=
 
     ctx.MkAnd([|notchUpdate;isUpdate;let60Update;mapkUpdate;lsUpdate;fateUpdate|])
 
-let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c =
+let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c ac0 ac1 =
     let clock  = ctx.MkIntConst(sprintf "Clock-%d" t )
     let clock' = ctx.MkIntConst(sprintf "Clock-%d" t')
     let timer = ctx.MkEq(clock',ctx.MkAdd(clock,ctx.MkInt(1)))
     //Variables in cell 0
-    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[2]
-    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[2]
+    let cell0Update = cellUpdate ctx states fates t t' 0 1 states.Consts.[ac0]
+    let cell1Update = cellUpdate ctx states fates t t' 1 0 states.Consts.[ac1]
     let cell0Static = cellStatic ctx t t' 0 1 states fates
     let cell1Static = cellStatic ctx t t' 1 0 states fates
     //Bounded asynchrony
@@ -160,13 +160,16 @@ let init (ctx:Context) (s:Solver) (states:EnumSort) t initState (fates:EnumSort)
 
 let simPrint (ctx:Context) (s:Solver) bound states fates =
     for i = 0 to bound do
-        printf "Time: %O\nMAPK-L :\t%O\tMAPK-R :\t%O\n" (s.Model.Eval((ctx.MkIntConst(sprintf "Clock-%d" i )),true)) (s.Model.Eval(geneCreate ctx "MAPK" i 0 states,true)) (s.Model.Eval(geneCreate ctx "MAPK" i 1 states,true))
+        printf "Time: %O\n" (s.Model.Eval((ctx.MkIntConst(sprintf "Clock-%d" i )),true))
+        printf "IS-L   :\t%O\tIS-R   :\t%O\n" (s.Model.Eval(geneCreate ctx "IS" i 0 states,true)) (s.Model.Eval(geneCreate ctx "IS" i 1 states,true))
+        printf "LET60-L:\t%O\tLET60-R:\t%O\n" (s.Model.Eval(geneCreate ctx "LET60" i 0 states,true)) (s.Model.Eval(geneCreate ctx "LET60" i 1 states,true))
+        printf "MAPK-L :\t%O\tMAPK-R :\t%O\n" (s.Model.Eval(geneCreate ctx "MAPK" i 0 states,true)) (s.Model.Eval(geneCreate ctx "MAPK" i 1 states,true))
         printf "Notch-L:\t%O\tNotch-R:\t%O\n" (s.Model.Eval(geneCreate ctx "Notch" i 0 states,true)) (s.Model.Eval(geneCreate ctx "Notch" i 1 states,true))
         printf "LS-L   :\t%O\tLS-R   :\t%O\n" (s.Model.Eval(geneCreate ctx "LS" i 0 states,true)) (s.Model.Eval(geneCreate ctx "LS" i 1 states,true))
         printf "Move-L :\t%O\tMove-R :\t%O\n" (s.Model.Eval(moveMarker ctx i 0)) (s.Model.Eval(moveMarker ctx i 1,true))
         printf "Fate-L :\t%O\tFate-R :\t%O\n" (s.Model.Eval(geneCreate ctx "Fate" i 0 fates,true)) (s.Model.Eval(geneCreate ctx "Fate" i 1 fates,true))
 
-let main bound c verbose = 
+let main bound c verbose inputStates = 
     let ctx = new Context ()
     let genes = [|"IS";"LS";"Notch";"LET60";"MAPK";"Fate";"Moved"|]
     let activity = [|"Low";"Medium";"High"|] 
@@ -177,7 +180,7 @@ let main bound c verbose =
     let s = ctx.MkSolver()
     init ctx s states 0 states.Consts.[0] fates fates.Consts.[0]
     for i = 1 to bound do 
-        step ctx s states fates (i-1) i c
+        step ctx s states fates (i-1) i c (Array.findIndex (fun e -> e=fst(inputStates)) activity) (Array.findIndex (fun e -> e=snd(inputStates)) activity)
     match s.Check() with 
     | Status.SATISFIABLE -> printf "Model sound (sat for unconstrained model up to bound %d). Now searching for fate patterns\n" bound
                             if verbose then simPrint ctx s bound states fates else ()
@@ -213,8 +216,8 @@ let main bound c verbose =
     | _ -> failwith "Unknown\n"
 
 printf "Testing synchronous model\n"
-main 12 Sync false
+main 12 Sync false ("High","High")
 printf "Testing asynchronous model\n"
-main 12 Async false
+main 12 Async false ("High","High")
 printf "Testing bounded asynchronous model\n"
-main 12 BoundedAsync false
+main 12 BoundedAsync false ("High","High")
