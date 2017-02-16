@@ -19,7 +19,10 @@ let main () =
     let truther = honesty.Consts.[1]
 
     //"All cretans are liars"
-    let statement = ctx.MkImplies(ctx.MkEq(speakNationality,cretan),ctx.MkFalse())
+    let statement = ctx.MkAnd([|
+                                ctx.MkImplies(ctx.MkEq(speakNationality,cretan),ctx.MkEq(speaker,falsehood))
+                                ctx.MkImplies(ctx.MkEq(speaker,falsehood),ctx.MkFalse()) 
+                                |])
     let paradox = ctx.MkEq(speakNationality,cretan)
 
     let s = ctx.MkSolver()
