@@ -58,17 +58,19 @@ let answer (ctx:Context) (s:Solver) (variables:IntExpr []) =
 let main () = 
     let ctx = new Context()
     //We have two variables, A and B, and they are each either 2 or 1, or both 2, or both 1
-    let variables = [|ctx.MkIntConst("A");ctx.MkIntConst("B")|]
-    let values = [|ctx.MkInt(2);ctx.MkInt(1)|]
+    let A = ctx.MkIntConst("A")
+    let B = ctx.MkIntConst("B")
+    let zOne = ctx.MkInt(1)
+    let zTwo = ctx.MkInt(2)
     let constraints = [|
-        ctx.MkOr([|ctx.MkEq(variables.[0],values.[0]);ctx.MkEq(variables.[0],values.[1])|]);
-        ctx.MkOr([|ctx.MkEq(variables.[1],values.[0]);ctx.MkEq(variables.[1],values.[1])|]);
+        ctx.MkOr([|ctx.MkEq(A,zOne);ctx.MkEq(A,zTwo)|]);
+        ctx.MkOr([|ctx.MkEq(B,zOne);ctx.MkEq(B,zTwo)|]);
         |]
     let s = ctx.MkSolver()
     s.Add(ctx.MkAnd(constraints))
     //Must be satisfiable
-    printf "%s" (sanity_check ctx s variables)
+    printf "%s" (sanity_check ctx s [|A;B|])
     //Paradox- must not be satisfiable
-    printf "%s" (paradox ctx s variables)
+    printf "%s" (paradox ctx s [|A;B|])
     //A is less than B- What is the answer?
-    printf "%s" (answer ctx s variables)
+    printf "%s" (answer ctx s [|A;B|])
