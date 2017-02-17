@@ -1,12 +1,12 @@
 ﻿// bitvector version of sudoku.fsx
 // SI: error, gives unsat right now? 
 
-#I @"..\\platform\\windows"
+#I @"C:\Users\bh418\Source\repos\compose-z3-tutorial\platform\Z3x64.4.4.1\lib";;
 #r "Microsoft.Z3.dll"
 
 open Microsoft.Z3 
 
-let bv_size = (uint32)8
+let bv_size = (uint32)4
 //
 // Convenience wrappers for Z3 
 //

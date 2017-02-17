@@ -25,7 +25,8 @@ https://github.com/Microsoft/BioModelAnalyzer), where the SMT solver Z3 is used 
 that have particular properties of interest.
 
 In this tutorial we will show how Z3 can be used through the programming language F\# to solve different
-problems.
+problems. We restrict ourselves to specific models; a generic solution would require an input model 
+format and an associated parser, which is outside of the scope of this demonstration.
 
 ### Getting started (tools and editors)
 
@@ -45,7 +46,7 @@ Z3 package to the platform folder in your local repository.
 Here we give some examples of how to encode different constraints in Z3 to solve problems where we
 are only interested in systems where elements don't change in time.
 
-### Which number is bigger? **Simple.fsx**
+### Which number is bigger? Simple.fsx
 
 In this example we will create an artificial problem to demonstrate different outputs from Z3. In this
 problem we have two variables, called A and B. Each variable is equal to either 1 or 2, and we want to 
@@ -59,7 +60,8 @@ Firstly, we establish a *context* with the line
     let ctx = new Context()
 	
 You can think of a context as a palette of different constraints and types you can use to describe your
-model. Typically programmers will wrap common functions for a context in dedicated functions to maintain
+model. It provides the expressions you need to describe your model in an appropriate type for Z3. Typically 
+programmers will wrap common functions for a context in dedicated functions to maintain
 commmon F\# stylings, but in most of the tutorials here we use the context directly. In the Suduko example
 below we show how we can wrap the functions.
 
@@ -77,7 +79,7 @@ one or two, so we need to specify that in through Z3
 
 	ctx.MkOr([|ctx.MkEq(A,zOne);ctx.MkEq(A,zTwo)|])
 	
-This line states that A=1, or A=2 using the variables we have previously defined. We put this term, and another 
+This line states that A=1 using MkEq, or A=2 using the variables we have previously defined. We put this term, and another 
 term referencing B into an array called constraints.
 
 These constraints define the problem, but we need to tell Z3 to use them. To do this we need a *Solver*, to which
@@ -89,9 +91,9 @@ in the array must be respected by using an "And" term
 	
 Now we can start testing! Three functions run different tests- 
 
-* sanity_check doesn't add anything but shows that the model is sound
-* paradox adds constraints that cannot be satisfied and should show that
-* answer addresses a "real" question- if A is less than B, is there a solution?
+* *sanity_check* doesn't add anything but shows that the model is sound
+* *paradox* adds constraints that cannot be satisfied and should show that
+* *answer* addresses a "real" question- if A is less than B, is there a solution?
 
 In each case we copy the solver, test the model, and then throw away the results. This allows us to add
 different, contradictory constraints without altering the other questions. To do this, we run three commands
@@ -110,22 +112,27 @@ solution), unsatisfiable (there is no solution) or unknown (something went wrong
 	
 Discards the working copy and reverts to the original copy.
 
-Looking in sanity_check we copy the model, and test without adding any additional constraints. We then test
+Looking in *sanity_check* we copy the model, and test without adding any additional constraints. We then test
 the result and find that it is satisfiable. We then draw out the solution using 
 
 	s.Model.ConstInterp
 	
 We can then print this to the terminal before discarding the result.
 
-The function paradox is similar, but we add an additional, impossible to satisfy constraint
+The function *paradox* is similar, but we add an additional, impossible to satisfy constraint
 
 	ctx.MkAnd([|ctx.MkEq(variables.[0],ctx.MkInt(2));ctx.MkEq(variables.[0],ctx.MkInt(1))|])
 	
 This says that A is equal to 2 and A is equal to 1. We then test, and should find that the result is 
 unsatisfiable.
 
-Finally the function answer adds a constraint that specifies that A is less than B. We can then retest
-and find the solution. Note that because we have used Push() and Pop() in each function, the constraints
+Finally the function *answer* adds a constraint that specifies that A is less than B. We can then retest
+and find the solution. MkLt is the expression used, meaning make less than (i.e. <), and there are other
+functions like MkLe (make less than or equal), MkGt, and MkGe.
+
+	ctx.MkLt(variables.[0],variables.[1])
+
+Note that because we have used Push() and Pop() in each function, the constraints
 in paradox and answer functions do not clash; in each case we have only added them to a working copy that
 is discarded at the end of the work. 
 
@@ -133,7 +140,7 @@ We do a further test in answer; we look at the solution that Check() gives us, a
 answer. This is done by adding a further constraint to the solver, excluding the observed result from the 
 solver, and running Check() again.
 
-### Liars paradox **Liars.fsx**
+### Liars paradox: Liars.fsx
 
 Lots of useful things can be described using integers, but they aren't the only types available in Z3. 
 This script shows you how to use Enumerated Sorts (where you can define a set of states using strings),
@@ -164,7 +171,42 @@ We then specify that the speaker is Cretan ("paradox"), and add both the stateme
 paradox to the solver to be checked. As written it is unsatisfiable, but you can leave out
 constraints to create a satisfying model.
 
-### Suduko solver
+### Sudoko solver; sudoku.fsx & sudoku-bv.fsx
+
+*Originally by @sishtiaq*
+
+In the first "real world" problem, we will write a sudoku solver. In this example we do two different
+things; we use the function MkDistinct(), which forces each element to be different, and we will explore
+two ways to solve the problem; the first using integers, and the second using bitvectors. We will also 
+wrap some of the Z3 functions so that they can be called in a more F\#-idiomatic way. 
+
+If you're not familiar with Sudoku, you start a 9x9 square grid. Initially some numbers are filled in
+but most are left blank. The game is to fill in the remaining blank spaces with numbers between 1 and
+9. The constraint is that in each row, column, and 3x3 quadrant every number must only appear once. There 
+should only be a single solution for a Sudoko solver.
+
+First we create a 2D array of integer expressions and name them x-A-B where A and B are their indices
+in the grid (*mk_grid*), and then read in an example puzzle taken from the Guardian (*init_grid*). Note
+that throughout the code we use the same functions in the context as before but through locally 
+defined functions. This can make the F\# code appear more natural e.g.
+
+	let mk_int_var (z3:Context) (name:string) = 
+	    z3.MkIntConst(name)
+
+It also allows us to wrap slightly more complex expressions, for example to specify a range, 1 <= x <= 9
+we can use the MkLe() 
+
+	let mk_le (z3:Context) (l:ArithExpr) (r:ArithExpr) = 
+	    z3.MkLe (l,r)
+	let m_le_x_le_n (z3:Context) (m:ArithExpr) (x:ArithExpr) (n:ArithExpr) = 
+	    mk_and z3 (mk_le z3 m x) (mk_le z3 x n)
+
+We then set up constraints that specify the rules of the game. Firstly, *range* specifies that each 
+element in the grid must be between 1 and 9 (using MkAnd() and MkLe() as above). We then need to 
+specify that all elements in a row, column and quadrant are different. In each of these cases 
+we use an expression MkDistinct() that specifies each element should be different.
+
+mk_distinct ctx [x.[0,0]; x.[1,0]; x.[2,0]; x.[3,0]; x.[4,0]; x.[5,0]; x.[6,0]; x.[7,0]; x.[8,0]]
 
 ### Einsteins Riddle
 

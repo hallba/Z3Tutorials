@@ -132,7 +132,7 @@ let step (ctx:Context) (s:Solver) (states:EnumSort) (fates:EnumSort) t t' c ac0 
                         match c with
                         //| Sync -> ctx.MkOr([|ctx.MkAnd(cell0Update,cell1Update);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
                         | Sync -> ctx.MkAnd([|cell0Update;cell1Update;ignoreMove|])
-                        | Async ->ctx.MkAnd(ctx.MkXor(ctx.MkAnd(cell0Update,cell1Static),ctx.MkAnd(cell1Update,cell0Static)),ignoreMove)
+                        | Async ->ctx.MkAnd(ctx.MkOr(ctx.MkAnd(cell0Update,cell1Static),ctx.MkAnd(cell1Update,cell0Static)),ignoreMove)
                         | BoundedAsync ->ctx.MkOr([|ctx.MkAnd([|cell0Update;move0Constraint;cell1Update;move1Constraint|]);ctx.MkAnd([|cell0Update;move0Constraint;cell1Static;ctx.MkEq(move1,move1')|]);ctx.MkAnd([|cell0Static;cell1Update;move1Constraint;ctx.MkEq(move0,move0')|]);ctx.MkAnd([|moveReset;cell0Static;cell1Static|])|])
     s.Add(ctx.MkAnd([|timer;systemUpdate|]))
 
