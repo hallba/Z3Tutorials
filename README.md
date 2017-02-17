@@ -140,7 +140,7 @@ We do a further test in answer; we look at the solution that Check() gives us, a
 answer. This is done by adding a further constraint to the solver, excluding the observed result from the 
 solver, and running Check() again.
 
-### Liars paradox: Liars.fsx
+### Liars paradox; Liars.fsx
 
 Lots of useful things can be described using integers, but they aren't the only types available in Z3. 
 This script shows you how to use Enumerated Sorts (where you can define a set of states using strings),
@@ -217,7 +217,7 @@ script makes the job easier; we can substitute bitvector equivalents for many of
 most notable difference in the alternative forms is that we need to pass a bitvector size to the 
 initialisation functions like MkBVConst; here we specify this value as a global unsigned integer.
 
-### Einsteins Riddle
+### Einsteins Riddle; Einstein.fsx
 
 This example brings together some of the ideas from the previous examples. Here we have 5 people,
 who live on the same street in different houses. Each house has a different colour, and each person
@@ -320,4 +320,88 @@ for cycles
 We can then run repeated checks up to the bound of the system. Once the bound is reached, we can be confident
 that there are no cycles.
 
-### Synchrony, asynchrony and bounded asynchrony in vulval precursor development
+### Synchrony, asynchrony and bounded asynchrony in vulval precursor development; VPC.fsx
+
+The development of the vulva in the roundworm C. elegans is considered a model for understanding
+organ growth. A row of six cells is assigned fates depending on the signals they receive from the 
+rest of the worm and one another. The pattern of these fates determines the shape of the organ.
+
+Underlying this behaviour is a race between two signalling networks, controlled by the proteins
+MAPK and Notch. When one is activated before the other, it shuts down the alternative proteins
+and triggers fate development. A cell that has MAPK active becomes a primary (1') cell; a cell 
+with Notch active becomes a secondary (2') cell; and finally a cell with neither active becomes
+a tertiary (3') cell. To make this more complicated, if MAPK is active in one cell, it activates
+Notch in the neighbouring cells! In the normal, not-mutated worm the pattern across the cells is
+
+	3 3 2 1 2 3
+
+Where the 4th cell receives a signal that activates MAPK. In normal conditions therefore you 
+cannot see the race between MAPK and Notch, but if one mutation means that all cells get the 
+same signal that activates MAPK. In this situation, you see a variety of patterns e.g.
+
+	1 1 1 1 1 1
+	1 2 1 1 1 2
+	2 1 2 2 1 2
+
+and others.
+
+In this section we will look at a simplified model of this mutant with only two cells. Biologically,
+we only expect 3 results
+
+	1 1
+	2 1
+	1 2
+
+We will use Z3 to study the different update orderings that have been discussed. Within each cell, the
+variables update determininistically. Between cells however, the orderings can either be
+
+* Synchronous- where all cells update at the same time
+* Asynchronous- where only one cell updates at a time
+* Bounded asynchronous- where one, or both cells can update at a time, but can only update a second time after all cells have updated
+
+We will just look at the ordering constraints here as the updates of variables within cells are 
+similar to what you've seen before. In the function step we use two functions cellUpdate (cell variables 
+change), and cellStatic (cell variables stay the same). We update a clock variable (used by the cells 
+to determine if they should become 3' cells). We also use a move variable for each cell (via the function
+*movemarker*), that can be used to track whether the cell has updated yet- this is needed for the 
+bounded asynchronous model but must be ignored in the others (specified with the constraint *ignoreMove*). 
+
+The synchronous update is easy- the constraint is that both cells must update and the Move markers ignored.
+
+	ctx.MkAnd([|cell0Update;cell1Update;ignoreMove|])
+ 
+It is also wrong- because it is deterministic, both cells move at exactly the same time so MAPK gets activated
+first in each case, giving only one pattern
+
+	1 1
+
+The asynchronous update is more involved; we always ignore the move markers, but we use a MkOr() term
+to specify that only one cell updates, whilst the other cell is static. 
+
+	ctx.MkAnd(ctx.MkOr(ctx.MkAnd(cell0Update,cell1Static),ctx.MkAnd(cell1Update,cell0Static)),ignoreMove)
+
+With a bound of 12, this also gives the wrong patterns
+
+	1 2
+	2 1
+	
+Now we have lost the synchronous behaviour that can occur that leads to the 1 1 pattern. 
+
+Finally, the bounded asynchronous scheme is the most complex. A cell can update only if its associated 
+move marker is false; on update the marker becomes true (specified by the *moveXConstraint* expressions).
+If a cells move marker is true, it cannot update again until it is reset. If a cell does not update its 
+marker remains unchanged. The move marker reset occurs if and only if all cells move markers are true; 
+in this situation all cells do not update.
+
+	ctx.MkOr(	[|	ctx.MkAnd([|cell0Update;move0Constraint;cell1Update;move1Constraint|]);
+					ctx.MkAnd([|cell0Update;move0Constraint;cell1Static;ctx.MkEq(move1,move1')|]);
+					ctx.MkAnd([|cell0Static;cell1Update;move1Constraint;ctx.MkEq(move0,move0')|]);
+					ctx.MkAnd([|moveReset;cell0Static;cell1Static|])
+					|])
+
+This scheme gives us the patterns we expect to see, and has been validated and thoroughly explored in 
+the scientific literature (http://rsif.royalsocietypublishing.org/content/11/98/20140245).
+
+The choice of update scheme can break other behaviours. Try change the inputs to the main function
+to "Low","High" and look at the results. Do you understand why each method gives you the result you 
+are seeing?
