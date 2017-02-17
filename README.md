@@ -183,7 +183,7 @@ wrap some of the Z3 functions so that they can be called in a more F\#-idiomatic
 If you're not familiar with Sudoku, you start a 9x9 square grid. Initially some numbers are filled in
 but most are left blank. The game is to fill in the remaining blank spaces with numbers between 1 and
 9. The constraint is that in each row, column, and 3x3 quadrant every number must only appear once. There 
-should only be a single solution for a Sudoko solver.
+should only be a single solution for a Sudoko solver. We will start with the integer version- sudoku.fsx
 
 First we create a 2D array of integer expressions and name them x-A-B where A and B are their indices
 in the grid (*mk_grid*), and then read in an example puzzle taken from the Guardian (*init_grid*). Note
@@ -204,18 +204,92 @@ we can use the MkLe()
 We then set up constraints that specify the rules of the game. Firstly, *range* specifies that each 
 element in the grid must be between 1 and 9 (using MkAnd() and MkLe() as above). We then need to 
 specify that all elements in a row, column and quadrant are different. In each of these cases 
-we use an expression MkDistinct() that specifies each element should be different.
+we use an expression MkDistinct() that specifies each element should be different. For example, in
+an individual row
 
-mk_distinct ctx [x.[0,0]; x.[1,0]; x.[2,0]; x.[3,0]; x.[4,0]; x.[5,0]; x.[6,0]; x.[7,0]; x.[8,0]]
+	mk_distinct ctx [x.[0,0]; x.[1,0]; x.[2,0]; x.[3,0]; x.[4,0]; x.[5,0]; x.[6,0]; x.[7,0]; x.[8,0]]
+	
+We can then add constraints for rows, columns, and quadrants and find a solution!
+
+In the script sudoku-bv.fsx we use bitvectors instead of integers. This in principle can be faster
+but this may depend on multiple different factors. Here the wrapping of functions in the previous
+script makes the job easier; we can substitute bitvector equivalents for many of the functions. The 
+most notable difference in the alternative forms is that we need to pass a bitvector size to the 
+initialisation functions like MkBVConst; here we specify this value as a global unsigned integer.
 
 ### Einsteins Riddle
 
+This example brings together some of the ideas from the previous examples. Here we have 5 people,
+who live on the same street in different houses. Each house has a different colour, and each person
+has a different drink, cigar, house colour, pet, and nationaility. From a list of facts (e.g. the 
+Dane drinks tea) you need to work out where everyone lives and what they like.
+
+As they all live on a street we can identify them by an integer, referencing their house number. 
+We create integer constants for each preference, and set them to be distinct integers between one
+and five.
+
+We can then add equalities to represent each fact. The more complex constraints are those referencing
+neighbours; here we need to use MkOr to specify that one or other is true. We then pass all of the
+constraints to the solver and find the solution!
+
 ## Ordering and simulations (bounded model checking)
 
-### Die Hard with a Vengance
+In each of the examples so far we have looked at systems that are effectively static in time. We
+don't consider how entities change over time, just their relationships with one another. This is 
+useful in some situations but, particularly in biology, we want to know how systems develop over 
+time. Here we will start to look at some examples where we describe this type of system.
+
+This can be referred to as bounded model checking; we look for solutions up to a bound (a number
+of steps taken). Our solutions are therefore restricted to the bound; sometimes this is fine, but 
+in others it can be a limitation. Increasing the bound makes the solutions slower and harder to 
+find as the size of state space increases. In a worst case scenario an increase of a single step
+may transform the problem from one that can be solved in ms to one that takes years! There may 
+therefore be a largest theoretical bound that is greater than the bound that can practically be 
+tested, and you should be aware that the results may not hold for larger, untestable bounds.
+
+### Die Hard with a Vengance; DieHard.fsx
+
+You have a 3 litre jug and a 5 litre jug, and need to measure 4 litres of water. You can empty 
+the jugs onto the ground and into each other, and you can fill them from each other and the tap. 
+Without measuring the volumes explicitly, how do you get 4 litres?
+
+Now we have variables that change with time. The way we create them is not different from before
+but we need to consider the initial state and the relationships between timepoints. 
+
+In previous examples where variables did not change we created constants with the name of the 
+variable; now we will add the time explictly to the variable name. So in the initial case we 
+will have just two variables "Five-0" and "Three-0". Consistant naming is important so that we 
+can encode the behaviour in a loop; other times will be written as "Five-%t" whtere %t is the time.
+
+We then initialise the model, by specifying how full the jugs are initially. Each jug starts off empty
+so we set the variables "Five-0" and "Three-0" to be equal to zero. 
+
+We then define the transitions that the jugs can make according to the actions we can perform. 
+This is done in the step function that asserts how the jugs update between two times, and the 
+bounds of the jugs (i.e. the total amount of water they can hold). The update itself is specified
+in assertUpdate. We can do a limited number of things;
+
+* Empty each of the jugs
+* Do nothing to each of the jugs
+* Fill each of the jugs
+* Transfer fluid from one jug to the other, leading to either one jug being filled or one emptied
+
+In the last case the total volume of water must stay the same, and one of the jugs must be either
+emptied or filled. We can then add all of the different options to an "Or" expression, and add this 
+as a constraint. 
+
+To test different bounds we then then use a loop and add a new step for each turn of the loop, testing
+at each stage for a solution. If we run the main function with a maximum bound of 10 we can find a 
+solution quickly, in only 6 steps! Now imagine that some updates are not allowed; for example, you couldn't 
+empty the 3 litre jug without transferring the contents to the other jug. What happens to the solution?
+Within a small bound, are there any update types you must have?
 
 ## Biological systems
 
 ### Proving stability of a Boolean network motif
+
+Stability in a biological system is defined as the presence of a single fix point and no cycles (that is
+loops with more than one state). It can be thought of as a measure of robustness; if you believe your
+model represents a homoestatic system, or a system at equilibrium, this can 
 
 ### Synchrony, asynchrony and bounded asynchrony in vulval precursor development
