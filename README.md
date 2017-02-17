@@ -286,10 +286,38 @@ Within a small bound, are there any update types you must have?
 
 ## Biological systems
 
-### Proving stability of a Boolean network motif
+### Proving stability of a Boolean network motif; BooleanNFFL.fsx
 
 Stability in a biological system is defined as the presence of a single fix point and no cycles (that is
 loops with more than one state). It can be thought of as a measure of robustness; if you believe your
-model represents a homoestatic system, or a system at equilibrium, this can 
+model represents a homoestatic system, or a system at equilibrium, we can use stability as a way to 
+test that the model is sound. 
+
+Here we will test a small Boolean network model representing "perfect adaption"- a negative feed forward
+loop. In this case we are modelling it as a deterministic system; all variables update at the same time. 
+Furthermore, we are modelling it with a constant "on" input. 
+
+The variable updates are encoded in the step function as in previous examples. Variables are modelled as 
+Booleans. As we consider all states initial we do not specify an initial state.
+
+Once the transitions are defined we can start searching for the endpoints of the system. Firstly, we need to
+find a single fix point. If there isn't one, we can be sure that the model is unstable; however we would still
+need to find the cycle to be sure. To find a fix point we can specify a step where the time is the same; this 
+effectively constrains the system to the set states that are self loops. The first answer is one fix point, 
+but we need to know that this fix point is unique. After finding an initial solution we can then exclude this
+solution with a new constraint and repeat the Check(). If this call is not satisfiable then we can be sure that
+there is no bifurcation in the system. It's worth noting that searching for fix points is relatively quick.
+
+The next stage is to search for cycles. We need to show that there are no cycles in the system, up to the 
+maximum bound of the system to know that the model is stable. There are 16 states in the system (2^4) so 
+we can use that as the maximum bound (this would not necessarily hold in an asynchronous system). To search
+for cycles
+
+* We use a loop to increment the number of steps from 0 up to the current bound
+* We add a constraints that the states at time 0 and time 1 are not the same (i.e. the last states are not a fixpoint)
+* We add a constraint that the initial state and the final state are the same 
+
+We can then run repeated checks up to the bound of the system. Once the bound is reached, we can be confident
+that there are no cycles.
 
 ### Synchrony, asynchrony and bounded asynchrony in vulval precursor development
