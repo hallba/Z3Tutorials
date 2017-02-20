@@ -1,5 +1,5 @@
 ﻿// This z3 needs to be a x86 dll
-#I @"C:\Users\sishtiaq\Downloads\z3-4.4.1-x86-win\z3-4.4.1-x86-win\bin";;
+#I @"C:\Users\bh418\Source\repos\compose-z3-tutorial\platform\Z3x64.4.4.1\lib";;
 #r "Microsoft.Z3.dll"
 
 open Microsoft.Z3 
@@ -94,6 +94,8 @@ let range ctx (x:IntExpr[,]) =
 
 // x00 # x10 # ... # x80
 let col_distinct ctx (x:IntExpr[,]) = 
+    let a = [x.[0,0]; x.[1,0]; x.[2,0]; x.[3,0]; x.[4,0]; x.[5,0]; x.[6,0]; x.[7,0]; x.[8,0]]
+    //Why does the below pass the type checker but substituting the above variable "a" not?
     mk_ands ctx [ (mk_distinct ctx [x.[0,0]; x.[1,0]; x.[2,0]; x.[3,0]; x.[4,0]; x.[5,0]; x.[6,0]; x.[7,0]; x.[8,0]]);
                   (mk_distinct ctx [x.[0,1]; x.[1,1]; x.[2,1]; x.[3,1]; x.[4,1]; x.[5,1]; x.[6,1]; x.[7,1]; x.[8,1]]);
                   (mk_distinct ctx [x.[0,2]; x.[1,2]; x.[2,2]; x.[3,2]; x.[4,2]; x.[5,2]; x.[6,2]; x.[7,2]; x.[8,2]]);
