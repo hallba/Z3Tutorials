@@ -11,7 +11,7 @@ open Microsoft.Z3
 let makeVariable (ctx:Context) name time =
     ctx.MkBoolConst(sprintf "%s-%d" name time)
 
-let iss2Loop (ctx:Context) (s:Solver) t t' = 
+let iss2Loop (ctx:Context) t t' = 
     let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     let a' = ctx.MkEq((makeVariable ctx "A" t'),ctx.MkFalse())
     let b' = ctx.MkEq((makeVariable ctx "B" t'),ctx.MkFalse())
@@ -31,7 +31,7 @@ let iss2LoopEdgeCount (ctx:Context) t =
     
     ctx.MkAdd(input',a',b',output') 
 
-let iss4Loop (ctx:Context) (s:Solver) t t' =
+let iss4Loop (ctx:Context) t t' =
     let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     let a' = ctx.MkAnd([|
                                 ctx.MkImplies((ctx.MkEq((makeVariable ctx "Output" t),ctx.MkFalse())),
@@ -48,7 +48,17 @@ let iss4Loop (ctx:Context) (s:Solver) t t' =
                     |])
     ctx.MkAnd([|input';a';b';output'|])
 
-let issNFB inputState (ctx:Context) (s:Solver) t t' = 
+let iss4LoopEdgeCount (ctx:Context) t =
+    //This doesn't make sense really; this model is deterministic so there is always one out edge
+    let input' = ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(1),ctx.MkInt(0)) :?> IntExpr
+    let b' = ctx.MkITE(ctx.MkEq((makeVariable ctx "B" t),ctx.MkTrue()),ctx.MkInt(1),ctx.MkInt(0)) :?> IntExpr
+
+    let a' = ctx.MkITE((ctx.MkEq((makeVariable ctx "Output" t),ctx.MkFalse())),ctx.MkInt(0),ctx.MkInt(1)) :?>IntExpr
+    let output' = ctx.MkInt(1)
+    //ctx.MkAdd(input',a',b',output')
+    ctx.MkInt(1) 
+
+let issNFB inputState (ctx:Context) t t' = 
     //Update input 
     let input' = if inputState then ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue()) else ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     //Update A 
@@ -81,7 +91,7 @@ let issNFB inputState (ctx:Context) (s:Solver) t t' =
     |])
     ctx.MkAnd([|asyncChange;fairness|])
 
-let issNFF inputState (ctx:Context) (s:Solver) t t' = 
+let issNFF inputState (ctx:Context) t t' = 
     //Update input 
     let input' = if inputState then ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue()) else ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     //Update A 
@@ -182,9 +192,9 @@ let minList (ctx:Context) (a:IntExpr list) =
     match a with 
     | topExpr::rest -> core rest topExpr
     | [] -> failwith "Empty list"
-let returnState (ctx:Context) (s:Solver) (a:int) (b:int) step =
-    ctx.MkITE((step ctx s a b),(makeLinkVariable ctx b),ctx.MkInt(a)) :?> IntExpr
-let findSCC bound updateRule =
+let returnState (ctx:Context) (a:int) (b:int) step =
+    ctx.MkITE((step ctx a b),(makeLinkVariable ctx b),ctx.MkInt(a)) :?> IntExpr
+let findBSCC bound updateRule edgeCount =
     //Incomplete
     //Only finds a set or reachable states from "0"
     let ctx = new Context()
@@ -197,13 +207,13 @@ let findSCC bound updateRule =
     let rec core i bound =
         printf "...%d" i;
         //The last element should be a successor of some of the earlier ones
-        let lastElementSuccessorofEarlier = ctx.MkOr(Array.init i (fun element -> updateRule ctx s element i)) 
+        let lastElementSuccessorofEarlier = ctx.MkOr(Array.init i (fun element -> updateRule ctx element i)) 
         //No element should be repeated
-        let noRepeat = ctx.MkAnd(Array.init (i-1) (fun element -> ctx.MkNot(statesEqual ctx element i)) )
+        let noRepeat = ctx.MkAnd(Array.init i (fun element -> ctx.MkNot(statesEqual ctx element i)) )
         s.Add(ctx.MkAnd([|lastElementSuccessorofEarlier;noRepeat|]))
         //Get out early if you can't find the states
         match s.Check() with 
-        | Status.UNSATISFIABLE -> printf "\nNo traces longer than %d steps\n" i; Stable
+        | Status.UNSATISFIABLE -> printf "\nNo traces longer than %d steps\n" (i-1); Stable
         | Status.SATISFIABLE ->
                                 //Now specify the "back-linker" constraints following Tarjan
                                 //Value of initial is 0
@@ -213,11 +223,11 @@ let findSCC bound updateRule =
                                 
                                 //This changes at each bound so we make a copy to work on
                                 s.Push()
-                                let lastLinkerValue site =  List.init i (fun element -> returnState ctx s site element updateRule ) 
+                                let lastLinkerValue site =  List.init i (fun element -> returnState ctx site element updateRule ) 
                                                             |> minList ctx
-                                let laterLinkers = Array.init i (fun element -> ctx.MkEq(makeLinkVariable ctx (element+1),(lastLinkerValue (element+1)))) 
+                                let laterLinkers = Array.init (i+1) (fun element -> ctx.MkEq(makeLinkVariable ctx (element+1),(lastLinkerValue (element+1)))) 
                                 //Finally, specify that they are all equal to the first linker value i.e. its a scc (within the bound)
-                                let allLinkBack= Array.init i (fun element -> ctx.MkEq((makeLinkVariable ctx (element+1)),ctx.MkInt(0)))
+                                let allLinkBack= Array.init (i+1) (fun element -> ctx.MkEq((makeLinkVariable ctx (element+1)),ctx.MkInt(0)))
 
                                 //For bottom
                                 //Count number of successors
@@ -225,7 +235,7 @@ let findSCC bound updateRule =
                                 //  (will need an alternative to update rule that returns int)
                                 //For all states #successors==#outgoing edges
                                 let numberSuccessors t t' =
-                                    ctx.MkITE((updateRule ctx s t t'),ctx.MkInt(1),ctx.MkInt(0)) :?> IntExpr
+                                    ctx.MkITE((updateRule ctx t t'),ctx.MkInt(1),ctx.MkInt(0)) :?> IntExpr
                                 let rec countSuccessors t lastT acc =
                                     if lastT > -1 then 
                                         countSuccessors t (lastT-1) (ctx.MkAdd(acc,(numberSuccessors t lastT) )) 
@@ -233,13 +243,14 @@ let findSCC bound updateRule =
                                 let successorCount =    Array.init (i+1) (fun t -> ((makeSuccessorCountVariable ctx t),t))
                                                         |> Array.map (fun (element,t) -> ctx.MkEq(element,(countSuccessors t i (ctx.MkInt(0))) ) )
                                 
-                                let outgoingCount = Array.init (i+1) (fun t -> ctx.MkEq((makeOutgoingEdgeCountVariable ctx t),ctx.MkInt(0)) )
-
+                                let outgoingCount = Array.init (i+1) (fun t -> ctx.MkEq((makeOutgoingEdgeCountVariable ctx t),(edgeCount ctx t) ) )
+                                let successorsEqOutgoing = Array.init (i+1) (fun t -> ctx.MkEq(makeSuccessorCountVariable ctx t,makeOutgoingEdgeCountVariable ctx t))
                                 s.Add(ctx.MkAnd[|    
                                                 ctx.MkAnd(successorCount)
                                                 ctx.MkAnd(outgoingCount)
                                                 ctx.MkAnd(laterLinkers)
                                                 ctx.MkAnd(allLinkBack)
+                                                //ctx.MkAnd(successorsEqOutgoing)
                                                 |])
                                 match s.Check() with 
                                 | Status.SATISFIABLE -> printf "\nFound SCC with bound %d\n" i; simPrint ctx s i ; SCC
@@ -296,7 +307,8 @@ let findTrace length updateRule =
     | _ -> failwith "x"
 
 let main _ = 
-    match findSCC 16 (issNFB true) with
-            | SCC -> ()
-            | Stable -> printf "Model has no SCC!\n"
-            | _ -> failwith "problem- error"
+    // match findSCC 16 (issNFB true) with
+    //         | SCC -> ()
+    //         | Stable -> printf "Model has no SCC!\n"
+    //         | _ -> failwith "problem- error"
+    ()
