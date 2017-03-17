@@ -91,6 +91,37 @@ let issNFB inputState (ctx:Context) t t' =
     |])
     ctx.MkAnd([|asyncChange;fairness|])
 
+let issNFBEdgeCount inputState (ctx:Context) t =
+    let input' =    if inputState then 
+                        ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkFalse()),ctx.MkInt(1),ctx.MkInt(0) ) :?> IntExpr
+                    else 
+                        ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(1),ctx.MkInt(0) ) :?> IntExpr
+    let output' = ctx.MkITE(ctx.MkEq((makeVariable ctx "Output" t),(makeVariable ctx "A" t)),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let b' = ctx.MkITE(ctx.MkEq((makeVariable ctx "Output" t),(makeVariable ctx "B" t)),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let a' = ctx.MkITE(
+                        ctx.MkOr(
+                                    ctx.MkAnd(
+                                            ctx.MkEq((makeVariable ctx "A" t),ctx.MkTrue()),
+                                            ctx.MkEq((makeVariable ctx "Input" t),(ctx.MkFalse()))
+                                            ),
+                                    ctx.MkAnd(
+                                            ctx.MkEq((makeVariable ctx "A" t),ctx.MkTrue()),
+                                            ctx.MkEq((makeVariable ctx "B" t),ctx.MkTrue()),
+                                            ctx.MkEq((makeVariable ctx "Input" t),(ctx.MkTrue()))
+                                            ),
+                                    ctx.MkAnd(
+                                            ctx.MkEq((makeVariable ctx "A" t),ctx.MkFalse()),
+                                            ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),
+                                            ctx.MkEq((makeVariable ctx "Input" t),(ctx.MkTrue()))
+                                            )
+                                ),
+                        ctx.MkInt(1),
+                        ctx.MkInt(0)) :?> IntExpr
+    ctx.MkAdd(input',output',b',a')
+
+let issNFFEdgeCount inputState (ctx:Context) t =
+    //Placeholder
+    ctx.MkInt(0)
 let issNFF inputState (ctx:Context) t t' = 
     //Update input 
     let input' = if inputState then ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue()) else ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
@@ -223,7 +254,7 @@ let findBSCC bound updateRule edgeCount =
                                 
                                 //This changes at each bound so we make a copy to work on
                                 s.Push()
-                                let lastLinkerValue site =  List.init i (fun element -> returnState ctx site element updateRule ) 
+                                let lastLinkerValue site =  List.init (i+1) (fun element -> returnState ctx site element updateRule ) 
                                                             |> minList ctx
                                 let laterLinkers = Array.init (i+1) (fun element -> ctx.MkEq(makeLinkVariable ctx (element+1),(lastLinkerValue (element+1)))) 
                                 //Finally, specify that they are all equal to the first linker value i.e. its a scc (within the bound)
@@ -307,8 +338,8 @@ let findTrace length updateRule =
     | _ -> failwith "x"
 
 let main _ = 
-    // match findSCC 16 (issNFB true) with
-    //         | SCC -> ()
-    //         | Stable -> printf "Model has no SCC!\n"
-    //         | _ -> failwith "problem- error"
-    ()
+    match findBSCC 16 (issNFB true) (issNFBEdgeCount true) with
+            | SCC -> ()
+            | Stable -> printf "Model has no BSCC!\n"
+            | _ -> failwith "problem- error"
+    
