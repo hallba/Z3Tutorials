@@ -31,6 +31,51 @@ let issHalfFP (ctx:Context) t t' =
 let issHalfFPEdgeCount (ctx:Context) t = 
     ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(0),ctx.MkInt(1))
 
+let issStableWithLoop (ctx:Context) t t' = 
+    let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue())
+    let output' = ctx.MkEq((makeVariable ctx "Output" t'),ctx.MkTrue())
+    let b' = ctx.MkAnd(
+                ctx.MkImplies(ctx.MkEq((makeVariable ctx "B" t),ctx.MkTrue()),ctx.MkEq((makeVariable ctx "B" t'),ctx.MkFalse())),
+                ctx.MkImplies(ctx.MkAnd(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),ctx.MkEq(makeVariable ctx "A" t,ctx.MkTrue())),ctx.MkEq((makeVariable ctx "B" t'),ctx.MkFalse())),
+                ctx.MkImplies(ctx.MkAnd(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),ctx.MkEq(makeVariable ctx "A" t,ctx.MkFalse())),ctx.MkEq((makeVariable ctx "B" t'),ctx.MkTrue()))
+                )
+    let a' = ctx.MkAnd(
+                ctx.MkImplies(ctx.MkEq((makeVariable ctx "B" t),ctx.MkTrue()),ctx.MkEq((makeVariable ctx "A" t'),(makeVariable ctx "A" t))),
+                ctx.MkImplies(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),ctx.MkEq((makeVariable ctx "A" t'),ctx.MkTrue()))
+                )
+    let a0 = ctx.MkEq((makeVariable ctx "A" t'),(makeVariable ctx "A" t))
+    let b0 = ctx.MkEq((makeVariable ctx "B" t'),(makeVariable ctx "B" t))
+    let input0 = ctx.MkEq((makeVariable ctx "Input" t'),(makeVariable ctx "Input" t))
+    let output0 = ctx.MkEq((makeVariable ctx "Output" t'),(makeVariable ctx "Output" t))
+
+    let asyncChange = ctx.MkOr([|   
+                                    ctx.MkAnd([|input'; a0; b0; output0|])
+                                    ctx.MkAnd([|input0; a'; b0; output0|])
+                                    ctx.MkAnd([|input0; a0; b'; output0|])
+                                    ctx.MkAnd([|input0; a0; b0; output'|])
+                                    |])
+    //Something must change if it can
+    let fairness = ctx.MkOr([| 
+                                ctx.MkNot(ctx.MkEq((makeVariable ctx "A" t'),(makeVariable ctx "A" t)))
+                                ctx.MkNot(ctx.MkEq((makeVariable ctx "B" t'),(makeVariable ctx "B" t)))
+                                ctx.MkNot(ctx.MkEq((makeVariable ctx "Output" t'),(makeVariable ctx "Output" t)))
+                                ctx.MkNot(ctx.MkEq((makeVariable ctx "Input" t'),(makeVariable ctx "Input" t)))
+    |])
+    ctx.MkAnd([|asyncChange;fairness|])
+
+let issStableWithLoopEdgeCount (ctx:Context) t =
+    let input' = ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let output' = ctx.MkITE(ctx.MkEq((makeVariable ctx "Output" t),ctx.MkTrue()),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let a' = ctx.MkITE(ctx.MkAnd(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),ctx.MkEq((makeVariable ctx "A" t),ctx.MkTrue())),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let b' = ctx.MkITE(
+                        ctx.MkOr(
+                            ctx.MkEq((makeVariable ctx "B" t),ctx.MkTrue()),
+                            ctx.MkAnd(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),ctx.MkEq((makeVariable ctx "A" t),ctx.MkFalse()))
+                            ),
+                        ctx.MkInt(1),
+                        ctx.MkInt(0)) :?> IntExpr
+    ctx.MkAdd(input',output',a',b')
+
 let iss2Loop (ctx:Context) t t' = 
     let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     let a' = ctx.MkEq((makeVariable ctx "A" t'),ctx.MkFalse())
