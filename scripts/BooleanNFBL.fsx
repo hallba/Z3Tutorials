@@ -11,6 +11,26 @@ open Microsoft.Z3
 let makeVariable (ctx:Context) name time =
     ctx.MkBoolConst(sprintf "%s-%d" name time)
 
+let issAllFP (ctx:Context) t t' =
+    let input' = ctx.MkEq((makeVariable ctx "Input" t'),(makeVariable ctx "Input" t))
+    let a' = ctx.MkEq((makeVariable ctx "A" t'),(makeVariable ctx "A" t))
+    let b' = ctx.MkEq((makeVariable ctx "B" t'),(makeVariable ctx "B" t))
+    let output' = ctx.MkEq((makeVariable ctx "Output" t'),(makeVariable ctx "Output" t))
+    ctx.MkAnd([|input';a';b';output'|])
+
+let issAllFPEdgeCount (ctx:Context) t = 
+    ctx.MkInt(0)
+
+let issHalfFP (ctx:Context) t t' =
+    let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue())
+    let a' = ctx.MkEq((makeVariable ctx "A" t'),(makeVariable ctx "A" t))
+    let b' = ctx.MkEq((makeVariable ctx "B" t'),(makeVariable ctx "B" t))
+    let output' = ctx.MkEq((makeVariable ctx "Output" t'),(makeVariable ctx "Output" t))
+    ctx.MkAnd([|input';a';b';output'|])
+
+let issHalfFPEdgeCount (ctx:Context) t = 
+    ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(0),ctx.MkInt(1))
+
 let iss2Loop (ctx:Context) t t' = 
     let input' = ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
     let a' = ctx.MkEq((makeVariable ctx "A" t'),ctx.MkFalse())
@@ -281,7 +301,7 @@ let findBSCC bound updateRule edgeCount =
                                                 ctx.MkAnd(outgoingCount)
                                                 ctx.MkAnd(laterLinkers)
                                                 ctx.MkAnd(allLinkBack)
-                                                //ctx.MkAnd(successorsEqOutgoing)
+                                                ctx.MkAnd(successorsEqOutgoing)
                                                 |])
                                 match s.Check() with 
                                 | Status.SATISFIABLE -> printf "\nFound SCC with bound %d\n" i; simPrint ctx s i ; SCC
