@@ -185,8 +185,29 @@ let issNFBEdgeCount inputState (ctx:Context) t =
     ctx.MkAdd(input',output',b',a')
 
 let issNFFEdgeCount inputState (ctx:Context) t =
-    //Placeholder
-    ctx.MkInt(0)
+    let input' =    if inputState then 
+                        ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkFalse()),ctx.MkInt(1),ctx.MkInt(0) ) :?> IntExpr
+                    else 
+                        ctx.MkITE(ctx.MkEq((makeVariable ctx "Input" t),ctx.MkTrue()),ctx.MkInt(1),ctx.MkInt(0) ) :?> IntExpr
+    let a' = ctx.MkITE(ctx.MkEq((makeVariable ctx "A" t),(makeVariable ctx "Input" t)),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let b' = ctx.MkITE(ctx.MkEq((makeVariable ctx "B" t),(makeVariable ctx "A" t)),ctx.MkInt(0),ctx.MkInt(1)) :?> IntExpr
+    let output' = ctx.MkITE(
+                        ctx.MkOr(
+                                    ctx.MkAnd(
+                                            ctx.MkEq((makeVariable ctx "A" t),ctx.MkTrue()),
+                                            ctx.MkEq((makeVariable ctx "B" t),(ctx.MkFalse())),
+                                            ctx.MkEq((makeVariable ctx "Output" t),(ctx.MkFalse()))
+                                            ),
+                                    ctx.MkAnd(
+                                            ctx.MkEq((makeVariable ctx "Output" t),(ctx.MkTrue())),
+                                            ctx.MkNot(ctx.MkAnd(ctx.MkEq((makeVariable ctx "B" t),ctx.MkFalse()),
+                                                                ctx.MkEq((makeVariable ctx "A" t),(ctx.MkTrue()))
+                                                                ))
+                                            )
+                                ),
+                        ctx.MkInt(1),
+                        ctx.MkInt(0)) :?> IntExpr
+    ctx.MkAdd(input',a',b',output')
 let issNFF inputState (ctx:Context) t t' = 
     //Update input 
     let input' = if inputState then ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkTrue()) else ctx.MkEq((makeVariable ctx "Input" t'),ctx.MkFalse())
