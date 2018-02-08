@@ -30,4 +30,8 @@ module getZ3 =
                     //This will take a while
                     ZipFile.ExtractToDirectory("z3.zip", ".") 
                     System.IO.Directory.Move("z3-4.6.0-x64-win","platform/z3")
+        | OSX ->    wc.DownloadFile("https://github.com/Z3Prover/z3/releases/download/z3-4.6.0/z3-4.6.0-x64-osx-10.11.6.zip", @"z3.zip")
+                    //This will take a while
+                    ZipFile.ExtractToDirectory("z3.zip", ".") 
+                    System.IO.Directory.Move("z3-4.6.0-x64-osx-10.11.6","platform/z3")
         | _ -> ()
