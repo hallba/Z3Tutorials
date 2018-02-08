@@ -1,11 +1,11 @@
-#I @"C:\Users\bh418\Source\repos\compose-z3-tutorial\platform\Z3x64.4.4.1\lib";;
-#r "Microsoft.Z3.dll"
+#load "getZ3.fsx"
 
+#r "../platform/z3/bin/Microsoft.Z3.dll"
 open Microsoft.Z3 
 
 let sanity_check (ctx:Context) (s:Solver) (v:IntExpr []) =
     s.Push()
-    let r = s.Check([||])
+    let r = s.Check()
     match r with 
     | Status.UNSATISFIABLE ->
         s.Pop()
@@ -20,7 +20,7 @@ let paradox (ctx:Context) (s:Solver) (variables:IntExpr []) =
     s.Push()
     let additionalConstraints = [|ctx.MkAnd([|ctx.MkEq(variables.[0],ctx.MkInt(2));ctx.MkEq(variables.[0],ctx.MkInt(1))|])|]
     s.Add(additionalConstraints)
-    let r = s.Check([||])
+    let r = s.Check()
     match r with 
     | Status.UNSATISFIABLE ->
         s.Pop()
@@ -35,7 +35,7 @@ let answer (ctx:Context) (s:Solver) (variables:IntExpr []) =
     s.Push()
     let additionalConstraints = [|ctx.MkLt(variables.[0],variables.[1])|]
     s.Add(additionalConstraints)
-    let r = s.Check([||])
+    let r = s.Check()
     match r with 
     | Status.UNSATISFIABLE ->
         s.Pop()
@@ -45,7 +45,7 @@ let answer (ctx:Context) (s:Solver) (variables:IntExpr []) =
         let bState = s.Model.ConstInterp(variables.[1])
         let result = sprintf  "Answer- sat\nA %O B %O\n" aState bState
         s.Add (ctx.MkNot(ctx.MkAnd(ctx.MkEq(variables.[0],aState),ctx.MkEq(variables.[1],bState))))
-        let r' = s.Check([||])
+        let r' = s.Check()
         match r' with
         | Status.UNSATISFIABLE ->
             s.Pop()

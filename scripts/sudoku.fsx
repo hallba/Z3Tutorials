@@ -1,6 +1,7 @@
 ﻿// This z3 needs to be a x86 dll
-#I @"C:\Users\bh418\Source\repos\compose-z3-tutorial\platform\Z3x64.4.4.1\lib";;
-#r "Microsoft.Z3.dll"
+#load "getZ3.fsx"
+
+#r "../platform/z3/bin/Microsoft.Z3.dll"
 
 open Microsoft.Z3 
 
