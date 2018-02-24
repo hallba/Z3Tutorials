@@ -16,7 +16,7 @@ module getZ3 =
 
     let getOS = 
             match int Environment.OSVersion.Platform with
-            | 4 | 128 -> Linux
+            | 4 | 128 -> if File.Exists("/System/Library/CoreServices/SystemVersion.plist") then OSX else Linux
             | 6       -> OSX
             | _       -> Windows
 
