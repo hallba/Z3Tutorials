@@ -19,12 +19,13 @@ module getZ3 =
 
     let getOS = 
             match int Environment.OSVersion.Platform, Environment.Is64BitProcess with
-            | ((4 | 128),true) -> Linuxx64
+            | ((4 | 128),true) -> if File.Exists("/System/Library/CoreServices/SystemVersion.plist") then OSXx64 else Linuxx64
             | (6,true)       -> OSXx64
             | (_,true)       -> Windowsx64
-            | ((4 | 128),_) -> Linuxx86
+            | ((4 | 128),_) -> if File.Exists("/System/Library/CoreServices/SystemVersion.plist") then OSXx86 else Linuxx86
             | (6,_)       -> OSXx86
             | _     -> Windowsx86
+
 
     if  true <> System.IO.File.Exists("platform/z3/LICENSE.txt") then 
         match getOS with
