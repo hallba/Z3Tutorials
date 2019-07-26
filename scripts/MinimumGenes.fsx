@@ -16,27 +16,54 @@ Want to find the smallest number of genes that link the original set
 
  *)
 
+open System
+open System.Net
+open System.IO
+
 #load "getZ3.fsx"
 
 #r "../platform/z3/bin/Microsoft.Z3.dll"
 
 open Microsoft.Z3 
 
-let main _ =
-    let paths = [|
-                      [|
-                          [|"U";"A";"B";"C";"V"|]
-                          [|"U";"A";"B";"D";"V"|]
-                          [|"U";"E";"F";"G";"V"|]
-                      |];
-                      [|
-                          [|"W";"A";"X"|]
-                      |];
-                      [|
-                          [|"Y";"E";"Z";|]
-                          [|"Y";"D";"Z";|]
-                      |];
-                |]
+let parsePath (line:string) = 
+    line.Split '#'
+    |> fun x -> x.[..((Array.length x) - 2)]
+    |> Array.map (fun (p:String) -> p.Split ',')
+
+let printGenes (ctx:Context) (m:Model) genes =
+    let pairArray = Array.map (fun g-> (g,ctx.MkBoolConst(sprintf "Used-%s" g ))) genes
+    let mutable used = 0
+    for g,zg in pairArray do
+        let state = sprintf "%O" (m.Eval(zg,true))
+        if state = "true" then 
+            printf "%s\n" g
+            used <- used + 1
+    printf "%d of %d genes used\n" used <| Array.length genes
+
+let main fromFile =
+    let paths = match fromFile with
+                | None ->   [|
+                                  [|
+                                      [|"U";"A";"B";"C";"V"|]
+                                      [|"U";"A";"B";"D";"V"|]
+                                      [|"U";"E";"F";"G";"V"|]
+                                  |];
+                                  [|
+                                      [|"W";"A";"X"|]
+                                  |];
+                                  [|
+                                      [|"Y";"E";"Z";|]
+                                      [|"Y";"D";"Z";|]
+                                  |];
+                            |]
+                | Some(name) -> let mutable pathcount = 0
+                                let result = [|for line in File.ReadLines(name) do 
+                                                let paths = parsePath line
+                                                pathcount <- pathcount + (Array.length paths)
+                                                yield paths|]
+                                printf "Reducing %d possible paths to %d paths\n" pathcount (Array.length result)
+                                result
 
     let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
 
@@ -88,11 +115,14 @@ let main _ =
     s.Add(countingElements) 
     s.Add(measure)
     ignore <| s.MkMinimize(geneNumber)
-    printf "%s\n" <| s.ToString()
+    //printf "%s\n" <| s.ToString()
     match s.Check() with
         | Status.SATISFIABLE -> 
             printf "sat\n"
-            printf "%s\n" <| s.Model.ToString()
+            //printf "%s\n" <| s.Model.ToString()
+            printGenes ctx s.Model geneNames
+            ()//Some(s.Model)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
+            ()//None
         | _ -> failwith "unknown"

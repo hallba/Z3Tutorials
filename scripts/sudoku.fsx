@@ -164,7 +164,7 @@ let main _ =
 
     let stopwatch = Stopwatch.StartNew()
     solver.Add (mk_ands ctx [init; range ctx g0; row_distinct ctx g0; col_distinct ctx g0; subgrid_distinct ctx g0])
-    let r = solver.Check([||])
+    let r = solver.Check()
     stopwatch.Stop()
     Printf.printf "time %Oms\n" stopwatch.ElapsedMilliseconds
 

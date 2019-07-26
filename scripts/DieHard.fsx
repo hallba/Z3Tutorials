@@ -96,7 +96,7 @@ let main maxBound =
             step ctx s (i-1) i
             s.Push()
             final ctx s i
-            let r = s.Check([||])
+            let r = s.Check()
             match r with 
             | Status.UNSATISFIABLE ->
                 s.Pop()
