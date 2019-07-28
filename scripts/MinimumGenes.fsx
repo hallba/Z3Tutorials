@@ -3,7 +3,7 @@ Three gene pairs, UV, WX,YZ
 Each has the following shortest paths
 
 U A B C V
-U A B D V
+U A B D V *
 U E F G V
 
 W A X
@@ -41,6 +41,26 @@ let printGenes (ctx:Context) (m:Model) genes =
             used <- used + 1
     printf "%d of %d genes used\n" used <| Array.length genes
 
+type dataSource = FileName of string | Data of string [] [] []
+
+let readFile name = 
+    let mutable pathcount = 0
+    let result = [|for line in File.ReadLines(name) do 
+                    let paths = parsePath line
+                    pathcount <- pathcount + (Array.length paths)
+                    yield paths|]
+    printf "Reducing %d possible paths to %d paths\n" pathcount (Array.length result)
+    result
+
+let estimateComplexity source = 
+    let data = match source with 
+                | FileName(name) -> readFile name
+                | Data(res) -> res
+    Array.map (fun x -> Array.length x |> float |> Math.Log10) data
+    |> Array.sum
+    |> printf "10^%f alternatives to be searched\n"
+
+
 let main fromFile =
     let paths = match fromFile with
                 | None ->   [|
@@ -57,13 +77,7 @@ let main fromFile =
                                       [|"Y";"D";"Z";|]
                                   |];
                             |]
-                | Some(name) -> let mutable pathcount = 0
-                                let result = [|for line in File.ReadLines(name) do 
-                                                let paths = parsePath line
-                                                pathcount <- pathcount + (Array.length paths)
-                                                yield paths|]
-                                printf "Reducing %d possible paths to %d paths\n" pathcount (Array.length result)
-                                result
+                | Some(name) -> readFile name
 
     let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
 
@@ -91,19 +105,33 @@ let main fromFile =
     //let g = ctx.MkGoal()
     let varnames,vars = Array.map (createVariables ctx) paths 
                         |> fun x -> 
-                            let names = Array.collect fst x 
-                            let behaviour = (ctx.MkAnd(Array.map snd x))
+                            let names = Array.map fst x 
+                            let behaviour = Array.map snd x
                             names,behaviour
 
-    //Has a gene been used? 
+    //Has a gene been used in a path? 
+    let localGeneUsed (ctx:Context) genes (pairMap:Map<string,Expr>) geneName pathID pathVars =
+        let usedVar = ctx.MkBoolConst(sprintf "PathUsed-%d-%s" pathID geneName)
+        let zGene = pairMap.[geneName]
+        let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
+        (usedVar,ctx.MkEq(usedVar,used))
+
+    //Has a gene been used in a path? 
     let geneUsed (ctx:Context) genes pathVars (pairMap:Map<string,Expr>) geneName =
         let usedVar = ctx.MkBoolConst(sprintf "Used-%s" geneName)
         let zGene = pairMap.[geneName]
-        let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
-        ctx.MkEq(usedVar,used)
+        //let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
+        let lgu = localGeneUsed ctx genes pairMap geneName
+        let used,ind =  Array.mapi lgu pathVars
+                        |> fun r -> 
+                            let vars = Array.map fst r
+                            let individualPath = Array.map snd r
+                            //If any of the path vars are true, then the global var is
+                            (ctx.MkOr(vars),individualPath)
+        (ctx.MkEq(usedVar,used),ind)
 
     let countingElements = Array.map (geneUsed ctx genes varnames pairs) geneNames
-                           |> fun x -> ctx.MkAnd(x)
+                           |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
 
     let geneNumber = ctx.MkIntConst("GeneCount")
     let boolToNumber (ctx: Context) n =
@@ -112,7 +140,7 @@ let main fromFile =
     let measure = ctx.MkEq(geneNumber,countGenes)
 
     s.Add(vars)   
-    s.Add(countingElements) 
+    //s.Add(countingElements) 
     s.Add(measure)
     ignore <| s.MkMinimize(geneNumber)
     //printf "%s\n" <| s.ToString()
