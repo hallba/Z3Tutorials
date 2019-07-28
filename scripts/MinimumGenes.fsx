@@ -78,7 +78,7 @@ let main fromFile =
                                   |];
                             |]
                 | Some(name) -> readFile name
-
+    estimateComplexity <| Data(paths)
     let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
 
     let ctx = new Context()
