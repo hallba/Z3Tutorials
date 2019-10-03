@@ -32,6 +32,9 @@ open Microsoft.Msagl.Core.Layout
 open Microsoft.Msagl.Core.Routing
 open Microsoft.Msagl.Layout.Layered //For sugiyama
 open Microsoft.Msagl.Layout.MDS
+open Microsoft.Msagl.Layout.Incremental
+open Microsoft.Msagl.Prototype.Ranking
+open Microsoft.Msagl.Miscellaneous
 
 type BmaVariable = {
                         id: int
@@ -48,16 +51,26 @@ type BmaRelationship = {
                             kind: string
                         }
 
-let makeGraph (ctx: Context) (m: Model) zGenes paths genes =
+type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
+
+type graphInput = {
+    ctx : Context
+    m : Model
+    zGenes : Sort
+    paths : string [] [] []
+    genes : string []
+}
+
+let makeGraphInternal gI layoutAlgo =
     let radius = 15.
     let makeNode (graph: GeometryGraph) radius name = 
         graph.Nodes.Add(Node(CurveFactory.CreateCircle(radius,Point()),name))
     let makeEdge (graph: GeometryGraph) source target = 
         graph.Edges.Add(Edge(graph.FindNodeByUserData(source),graph.FindNodeByUserData(target)))
     let getUsedNodes graph radius genes =
-        let pairArray = Array.map (fun g-> (g,ctx.MkBoolConst(sprintf "Used-%s" g ))) genes
+        let pairArray = Array.map (fun g-> (g,gI.ctx.MkBoolConst(sprintf "Used-%s" g ))) genes
         for g,zg in pairArray do
-            let state = sprintf "%O" (m.Eval(zg,true))
+            let state = sprintf "%O" (gI.m.Eval(zg,true))
             if state = "true" then 
                 makeNode graph radius g
     let getUsedEdges graph (paths: string [] [] []) = 
@@ -67,13 +80,13 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes =
             let namer =  
                 let pathname = sprintf "%s-%s-%d" example.[0] (Array.last example) 
                 fun i ->
-                    ctx.MkConst((pathname i), zGenes)
+                    gI.ctx.MkConst((pathname i), gI.zGenes)
             //create an array of all variable names
             let variableNames = Array.mapi (fun i _ -> namer i) individualPath.[0]
             let edgeNumber = (Array.length variableNames) - 2
             for i = 0 to edgeNumber do
-                let source = sprintf "%O" (m.Eval(variableNames.[i],true))
-                let target = sprintf "%O" (m.Eval(variableNames.[i+1],true))
+                let source = sprintf "%O" (gI.m.Eval(variableNames.[i],true))
+                let target = sprintf "%O" (gI.m.Eval(variableNames.[i+1],true))
                 match foundEdges.TryGetValue((source,target)) with
                 | false,_ ->    foundEdges.Add((source,target),true)
                                 makeEdge graph source target
@@ -83,20 +96,30 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes =
     //Add nodes
     //makeNode graph radius "A"
     //makeNode graph radius "B"
-    getUsedNodes graph radius genes
+    getUsedNodes graph radius gI.genes
     //Add edges
     //makeEdge graph "A" "B"
-    getUsedEdges graph paths
+    getUsedEdges graph gI.paths
     //Parameters for layout
-    // let settings = SugiyamaLayoutSettings(
-    //     Transformation = PlaneTransformation.Rotation(Math.PI/2.),
-    //     EdgeRoutingSettings = {EdgeRoutingMode = EdgeRoutingMode.Spline})
     let routingSettings = EdgeRoutingSettings(EdgeRoutingMode = EdgeRoutingMode.StraightLine)
-    let settings =  SugiyamaLayoutSettings(EdgeRoutingSettings = routingSettings)
-    let layout =  LayeredLayout(graph,settings)
-    //let settingsMDS = MdsLayoutSettings()
-    //let layoutMDS = MdsGraphLayout(settingsMDS,graph)
-    layout.Run()
+
+    match layoutAlgo with
+    | MDS      ->           let settings = MdsLayoutSettings(EdgeRoutingSettings = routingSettings)
+                            //let layout = MdsGraphLayout(settings,graph)
+                            //layout.Run()
+
+                            LayoutHelpers.CalculateLayout(graph,settings,null)
+    | Sugiyama ->           let settings =  SugiyamaLayoutSettings(EdgeRoutingSettings = routingSettings)
+                            //let layout =  LayeredLayout(graph,settings)
+                            //layout.Run()
+                            LayoutHelpers.CalculateLayout(graph,settings,null)
+    | Ranking ->            let settings = RankingLayoutSettings(EdgeRoutingSettings = routingSettings)
+                            //let layout = RankingLayout(settings,graph)
+                            //layout.Run()
+                            LayoutHelpers.CalculateLayout(graph,settings,null)
+    | FastIncremental ->    let settings = FastIncrementalLayoutSettings(EdgeRoutingSettings = routingSettings)
+                            LayoutHelpers.CalculateLayout(graph,settings,null)
+    | _ -> failwith "Not implemented"
 
     //Now format a model with all of the interactions
 
@@ -140,6 +163,17 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes =
 
     let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
     printf "%s" result 
+
+let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo =
+    let gI = {
+        ctx = ctx
+        m = m
+        zGenes = zGenes
+        paths = paths
+        genes = genes
+    }
+    makeGraphInternal gI layoutAlgo
+    gI
 
 let parsePath (line:string) = 
     line.Split '#'
@@ -264,9 +298,8 @@ let main fromFile =
             printf "sat\n"
             //printf "%s\n" <| s.Model.ToString()
             printGenes ctx s.Model geneNames
-            makeGraph ctx s.Model genes paths geneNames
-            ()//Some(s.Model)
+            Some(makeGraph ctx s.Model genes paths geneNames Sugiyama)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
-            ()//None
+            None
         | _ -> failwith "unknown"
