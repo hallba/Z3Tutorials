@@ -19,12 +19,127 @@ Want to find the smallest number of genes that link the original set
 open System
 open System.Net
 open System.IO
+open System.Collections.Generic
 
 #load "getZ3.fsx"
 
 #r "../platform/z3/bin/Microsoft.Z3.dll"
-
+#r "../packages/Microsoft.Msagl/lib/net40/Microsoft.Msagl.dll"
 open Microsoft.Z3 
+open Microsoft.Msagl.Core.Geometry
+open Microsoft.Msagl.Core.Geometry.Curves
+open Microsoft.Msagl.Core.Layout
+open Microsoft.Msagl.Core.Routing
+open Microsoft.Msagl.Layout.Layered //For sugiyama
+open Microsoft.Msagl.Layout.MDS
+
+type BmaVariable = {
+                        id: int
+                        name: string
+                        x: float
+                        y: float
+                        formula: string
+                        granularity: int
+                    }
+type BmaRelationship = {
+                            id: int
+                            source: int
+                            target: int
+                            kind: string
+                        }
+
+let makeGraph (ctx: Context) (m: Model) zGenes paths genes =
+    let radius = 15.
+    let makeNode (graph: GeometryGraph) radius name = 
+        graph.Nodes.Add(Node(CurveFactory.CreateCircle(radius,Point()),name))
+    let makeEdge (graph: GeometryGraph) source target = 
+        graph.Edges.Add(Edge(graph.FindNodeByUserData(source),graph.FindNodeByUserData(target)))
+    let getUsedNodes graph radius genes =
+        let pairArray = Array.map (fun g-> (g,ctx.MkBoolConst(sprintf "Used-%s" g ))) genes
+        for g,zg in pairArray do
+            let state = sprintf "%O" (m.Eval(zg,true))
+            if state = "true" then 
+                makeNode graph radius g
+    let getUsedEdges graph (paths: string [] [] []) = 
+        let foundEdges = new Dictionary<string*string,_>()
+        let getEdgesPath (individualPath: string [] []) =
+            let example = individualPath.[0]
+            let namer =  
+                let pathname = sprintf "%s-%s-%d" example.[0] (Array.last example) 
+                fun i ->
+                    ctx.MkConst((pathname i), zGenes)
+            //create an array of all variable names
+            let variableNames = Array.mapi (fun i _ -> namer i) individualPath.[0]
+            let edgeNumber = (Array.length variableNames) - 2
+            for i = 0 to edgeNumber do
+                let source = sprintf "%O" (m.Eval(variableNames.[i],true))
+                let target = sprintf "%O" (m.Eval(variableNames.[i+1],true))
+                match foundEdges.TryGetValue((source,target)) with
+                | false,_ ->    foundEdges.Add((source,target),true)
+                                makeEdge graph source target
+                | _,_ -> ()
+        Array.iter getEdgesPath paths 
+    let graph = GeometryGraph()
+    //Add nodes
+    //makeNode graph radius "A"
+    //makeNode graph radius "B"
+    getUsedNodes graph radius genes
+    //Add edges
+    //makeEdge graph "A" "B"
+    getUsedEdges graph paths
+    //Parameters for layout
+    // let settings = SugiyamaLayoutSettings(
+    //     Transformation = PlaneTransformation.Rotation(Math.PI/2.),
+    //     EdgeRoutingSettings = {EdgeRoutingMode = EdgeRoutingMode.Spline})
+    let routingSettings = EdgeRoutingSettings(EdgeRoutingMode = EdgeRoutingMode.StraightLine)
+    let settings =  SugiyamaLayoutSettings(EdgeRoutingSettings = routingSettings)
+    let layout =  LayeredLayout(graph,settings)
+    //let settingsMDS = MdsLayoutSettings()
+    //let layoutMDS = MdsGraphLayout(settingsMDS,graph)
+    layout.Run()
+
+    //Now format a model with all of the interactions
+
+    let bmaVariableModel bmaVar =
+        sprintf "{\"Name\":\"%s\",\"Id\":%d,\"RangeFrom\":0,\"RangeTo\":%d,\"Formula\":\"%s\"}" bmaVar.name bmaVar.id bmaVar.granularity bmaVar.formula 
+    let bmaVariableLayout (bmaVar: BmaVariable) =
+        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"\"}" bmaVar.id bmaVar.name bmaVar.x bmaVar.y
+    let bmaRelationshipText bmaRel =
+        sprintf "{\"Id\":%d,\"FromVariable\":%d,\"ToVariable\":%d,\"Type\":\"%s\"}" bmaRel.id bmaRel.source bmaRel.target bmaRel.kind
+    let idMapping (n: Node IList) =
+        let nameToID = new Dictionary<string,int>()
+        for i=0 to (n.Count-1) do
+            nameToID.Add(n.[i].UserData.ToString(),i)
+        nameToID
+
+    let nodeToBmaVar (n:Node) i = 
+        {   name = n.UserData.ToString()
+            x = n.Center.X
+            y = n.Center.Y
+            id = i
+            formula = ""
+            granularity = 2
+        }
+    let edgeToBmaRel (e:Edge) (nameToID:Dictionary<string,int>) i =
+        {
+            kind = "Activator"
+            id = i
+            source = nameToID.[e.Source.UserData.ToString()]
+            target = nameToID.[e.Target.UserData.ToString()]
+        }
+
+    //convert nodes into appropriate strings
+    let nodeCount = graph.Nodes.Count
+    let bmaVariables = Array.init nodeCount (fun i -> nodeToBmaVar graph.Nodes.[i] i )
+    let nameToID = idMapping graph.Nodes
+    let varModel = Array.map bmaVariableModel bmaVariables |> fun x -> String.Join(",",x) 
+    let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
+    let interactions =  Array.ofSeq graph.Edges 
+                        |> Array.mapi (fun i e -> edgeToBmaRel e nameToID (i+nodeCount) |> bmaRelationshipText) 
+                        |> fun x -> String.Join(",",x)
+
+    let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
+    printf "%s" result 
 
 let parsePath (line:string) = 
     line.Split '#'
@@ -149,6 +264,7 @@ let main fromFile =
             printf "sat\n"
             //printf "%s\n" <| s.Model.ToString()
             printGenes ctx s.Model geneNames
+            makeGraph ctx s.Model genes paths geneNames
             ()//Some(s.Model)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
