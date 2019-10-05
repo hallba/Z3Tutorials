@@ -43,6 +43,7 @@ type BmaVariable = {
                         y: float
                         formula: string
                         granularity: int
+                        description: string
                     }
 type BmaRelationship = {
                             id: int
@@ -53,6 +54,8 @@ type BmaRelationship = {
 
 type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
 
+type InteractionType = Activator | Inhibitor
+
 type graphInput = {
     ctx : Context
     m : Model
@@ -61,7 +64,23 @@ type graphInput = {
     genes : string []
 }
 
-let makeGraphInternal gI layoutAlgo =
+type InteractionInput = {
+    source : string
+    target : string
+    description : string
+    kind: InteractionType
+    link: string
+}
+
+let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
+    match data with
+    | None -> None
+    | Some(iMap) -> 
+        let key = sprintf "%s>%s" source target
+        let information = iMap.[key]
+        Some(information)
+
+let makeGraphInternal gI layoutAlgo interactionData =
     let radius = 15.
     let makeNode (graph: GeometryGraph) radius name = 
         graph.Nodes.Add(Node(CurveFactory.CreateCircle(radius,Point()),name))
@@ -126,7 +145,7 @@ let makeGraphInternal gI layoutAlgo =
     let bmaVariableModel bmaVar =
         sprintf "{\"Name\":\"%s\",\"Id\":%d,\"RangeFrom\":0,\"RangeTo\":%d,\"Formula\":\"%s\"}" bmaVar.name bmaVar.id bmaVar.granularity bmaVar.formula 
     let bmaVariableLayout (bmaVar: BmaVariable) =
-        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"\"}" bmaVar.id bmaVar.name bmaVar.x bmaVar.y
+        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\"}" bmaVar.id bmaVar.name bmaVar.x bmaVar.y bmaVar.description
     let bmaRelationshipText bmaRel =
         sprintf "{\"Id\":%d,\"FromVariable\":%d,\"ToVariable\":%d,\"Type\":\"%s\"}" bmaRel.id bmaRel.source bmaRel.target bmaRel.kind
     let idMapping (n: Node IList) =
@@ -134,37 +153,57 @@ let makeGraphInternal gI layoutAlgo =
         for i=0 to (n.Count-1) do
             nameToID.Add(n.[i].UserData.ToString(),i)
         nameToID
-
+    
+    let nodeAnnotation = new Dictionary<string,string>()
     let nodeToBmaVar (n:Node) i = 
-        {   name = n.UserData.ToString()
+        let name = n.UserData.ToString()
+        {   name = name
             x = n.Center.X
             y = n.Center.Y
             id = i
             formula = ""
             granularity = 2
+            description = match nodeAnnotation.TryGetValue name with
+                          | true,d -> d
+                          | _,_ -> ""
+
         }
     let edgeToBmaRel (e:Edge) (nameToID:Dictionary<string,int>) i =
+        let source = e.Source.UserData.ToString()
+        let target = e.Target.UserData.ToString()
+        let kind =  match (fancyInteractions interactionData source target) with
+                    | None -> "Activator"
+                    | Some(i) -> //Store node description data
+                                 let d = i.description
+                                 match nodeAnnotation.TryGetValue target with
+                                 | true, v -> nodeAnnotation.[target] <- v+d
+                                 | false,_ -> nodeAnnotation.Add(target,d)
+                                 //Extract the node information
+                                 match i.kind with 
+                                 | Activator -> "Activator"
+                                 | _ -> "Inhibitor"
         {
-            kind = "Activator"
+            kind = kind
             id = i
-            source = nameToID.[e.Source.UserData.ToString()]
-            target = nameToID.[e.Target.UserData.ToString()]
+            source = nameToID.[source]
+            target = nameToID.[target]
         }
 
     //convert nodes into appropriate strings
     let nodeCount = graph.Nodes.Count
-    let bmaVariables = Array.init nodeCount (fun i -> nodeToBmaVar graph.Nodes.[i] i )
     let nameToID = idMapping graph.Nodes
-    let varModel = Array.map bmaVariableModel bmaVariables |> fun x -> String.Join(",",x) 
-    let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
+    //find the interactions first, to build up the description dictionary, then build the variables
     let interactions =  Array.ofSeq graph.Edges 
                         |> Array.mapi (fun i e -> edgeToBmaRel e nameToID (i+nodeCount) |> bmaRelationshipText) 
                         |> fun x -> String.Join(",",x)
+    let bmaVariables = Array.init nodeCount (fun i -> nodeToBmaVar graph.Nodes.[i] i )
+    let varModel = Array.map bmaVariableModel bmaVariables |> fun x -> String.Join(",",x) 
+    let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
 
     let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
     printf "%s" result 
 
-let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo =
+let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData =
     let gI = {
         ctx = ctx
         m = m
@@ -172,7 +211,7 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo =
         paths = paths
         genes = genes
     }
-    makeGraphInternal gI layoutAlgo
+    makeGraphInternal gI layoutAlgo intData
     gI
 
 let parsePath (line:string) = 
@@ -201,16 +240,37 @@ let readFile name =
     printf "Reducing %d possible paths to %d paths\n" pathcount (Array.length result)
     result
 
+let parseInteractions (line:string) = 
+    let contents = line.Split '/'
+    let interaction = contents.[0]
+    let fullDescription = contents.[1]
+    let kind = if (fullDescription.IndexOf("Inhibitor")<0) then Activator else Inhibitor
+    let target = interaction.Split '>' |> fun x -> x.[1]
+    let source = interaction.Split '>' |> fun x -> x.[0]
+    {
+        kind=kind
+        target=target
+        source=source
+        description=fullDescription
+        link=interaction
+    }
+
+let readInteractionsFile name =
+    let interactionType = new Dictionary<string,InteractionInput>()
+    for line in File.ReadLines(name) do 
+        let interaction = parseInteractions line
+        interactionType.Add(interaction.link,interaction)
+    interactionType
+
 let estimateComplexity source = 
     let data = match source with 
                 | FileName(name) -> readFile name
                 | Data(res) -> res
-    Array.map (fun x -> Array.length x |> float |> Math.Log10) data
-    |> Array.sum
+    Array.sumBy (fun x -> Array.length x |> float |> Math.Log10) data
     |> printf "10^%f alternatives to be searched\n"
 
 
-let main fromFile =
+let main fromFile interactionFile =
     let paths = match fromFile with
                 | None ->   [|
                                   [|
@@ -227,6 +287,9 @@ let main fromFile =
                                   |];
                             |]
                 | Some(name) -> readFile name
+    let interactions =  match interactionFile with 
+                        | None -> None
+                        | Some(name) -> Some(readInteractionsFile name)
     estimateComplexity <| Data(paths)
     let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
 
@@ -298,7 +361,9 @@ let main fromFile =
             printf "sat\n"
             //printf "%s\n" <| s.Model.ToString()
             printGenes ctx s.Model geneNames
-            Some(makeGraph ctx s.Model genes paths geneNames Sugiyama)
+            let result = makeGraph ctx s.Model genes paths geneNames Sugiyama interactions
+            //Return both inputs for makeGraphInternal to enable replotting
+            Some(result,interactions)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
             None
