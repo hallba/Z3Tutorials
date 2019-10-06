@@ -17,9 +17,9 @@ Want to find the smallest number of genes that link the original set
  *)
 
 open System
-open System.Net
 open System.IO
 open System.Collections.Generic
+open System.Windows.Forms
 
 #load "getZ3.fsx"
 
@@ -56,20 +56,22 @@ type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
 
 type InteractionType = Activator | Inhibitor
 
-type graphInput = {
-    ctx : Context
-    m : Model
-    zGenes : Sort
-    paths : string [] [] []
-    genes : string []
-}
-
 type InteractionInput = {
     source : string
     target : string
     description : string
     kind: InteractionType
     link: string
+}
+
+type graphInput = {
+    ctx : Context
+    m : Model
+    zGenes : Sort
+    paths : string [] [] []
+    genes : string []
+    layout: LayoutSelection
+    interactionInfo : Dictionary<string,InteractionInput> option
 }
 
 let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
@@ -80,7 +82,7 @@ let fancyInteractions (data: Dictionary<string,InteractionInput> option) source 
         let information = iMap.[key]
         Some(information)
 
-let makeGraphInternal gI layoutAlgo interactionData =
+let makeGraphInternal gI =
     let radius = 15.
     let makeNode (graph: GeometryGraph) radius name = 
         graph.Nodes.Add(Node(CurveFactory.CreateCircle(radius,Point()),name))
@@ -122,7 +124,7 @@ let makeGraphInternal gI layoutAlgo interactionData =
     //Parameters for layout
     let routingSettings = EdgeRoutingSettings(EdgeRoutingMode = EdgeRoutingMode.StraightLine)
 
-    match layoutAlgo with
+    match gI.layout with
     | MDS      ->           let settings = MdsLayoutSettings(EdgeRoutingSettings = routingSettings)
                             //let layout = MdsGraphLayout(settings,graph)
                             //layout.Run()
@@ -171,7 +173,7 @@ let makeGraphInternal gI layoutAlgo interactionData =
     let edgeToBmaRel (e:Edge) (nameToID:Dictionary<string,int>) i =
         let source = e.Source.UserData.ToString()
         let target = e.Target.UserData.ToString()
-        let kind =  match (fancyInteractions interactionData source target) with
+        let kind =  match (fancyInteractions gI.interactionInfo source target) with
                     | None -> "Activator"
                     | Some(i) -> //Store node description data
                                  let d = i.description
@@ -201,6 +203,7 @@ let makeGraphInternal gI layoutAlgo interactionData =
     let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
 
     let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
+    Clipboard.SetText(result)
     printf "%s" result 
 
 let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData =
@@ -210,8 +213,10 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData =
         zGenes = zGenes
         paths = paths
         genes = genes
+        layout = layoutAlgo
+        interactionInfo = intData
     }
-    makeGraphInternal gI layoutAlgo intData
+    makeGraphInternal gI
     gI
 
 let parsePath (line:string) = 
