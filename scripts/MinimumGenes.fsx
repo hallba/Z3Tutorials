@@ -482,7 +482,7 @@ let main inputGenes ignoreSelfLoops =
             printGenes ctx s.Model geneNames
             let result = makeGraph ctx s.Model genes paths geneNames Sugiyama interactions
             //Return both inputs for makeGraphInternal to enable replotting
-            Some(result,interactions)
+            Some(result)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
             None
