@@ -63,7 +63,7 @@ type PartialPath =
                 | Some(n) -> ()
         core this []
 
-type xNode = 
+type Vertex = 
     {
         sname: string
         vertexId : int
@@ -120,7 +120,7 @@ let allShortestPaths source target data =
     |> Array.map (fun p -> p.ToArray)
 //Uses paths and the ominpath data to create a dictionary of connections
 let buildEdgeDictionary paths data =
-    let getEdges (lookUp: Dictionary<string,int>) (vertices: xNode []) (d: Dictionary<string,InteractionInput>) path =
+    let getEdges (lookUp: Dictionary<string,int>) (vertices: Vertex []) (d: Dictionary<string,InteractionInput>) path =
         let edgeNumber = Array.length path - 2
         for i=0 to edgeNumber do  
             let source = path.[i]
@@ -151,8 +151,8 @@ let buildEdgeDictionary paths data =
     edgeDescriptions
 
 
-let pairwisePathSearch data genes =
-    Array.collect (fun geneI -> Array.map (fun geneJ -> allShortestPaths geneI geneJ data) genes ) genes
+let pairwisePathSearch data genes ignoreSelfLoops=
+    Array.collect (fun geneI -> Array.map (fun geneJ -> if ignoreSelfLoops || geneI <> geneJ then allShortestPaths geneI geneJ data else [||]) genes ) genes
     |> Array.filter (fun pSet -> pSet<>[||])
 
 
@@ -174,7 +174,7 @@ type BmaRelationship = {
 
 type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
 
-type graphInput = {
+type GraphInput = {
     ctx : Context
     m : Model
     zGenes : Sort
@@ -344,7 +344,7 @@ let printGenes (ctx:Context) (m:Model) genes =
             used <- used + 1
     printf "%d of %d genes used\n" used <| Array.length genes
 
-type dataSource = FileName of string | Data of string [] [] []
+type DataSource = FileName of string | Data of string [] [] []
 
 let readFile name = 
     let mutable pathcount = 0
@@ -381,13 +381,14 @@ let estimateComplexity source =
     let data = match source with 
                 | FileName(name) -> readFile name
                 | Data(res) -> res
-    Array.sumBy (fun x -> Array.length x |> float |> Math.Log10) data
+    Array.sumBy (Array.length >> float >> Math.Log10) data
     |> printf "10^%f alternatives to be searched\n"
 
+type MainInput = Demo | FromArray of string [] | FromFile of string
 
-let main inputGenes =
+let main inputGenes ignoreSelfLoops =
     let paths = match inputGenes with
-                | None ->   [|
+                | Demo ->   [|
                                   [|
                                       [|"U";"A";"B";"C";"V"|]
                                       [|"U";"A";"B";"D";"V"|]
@@ -401,12 +402,15 @@ let main inputGenes =
                                       [|"Y";"D";"Z";|]
                                   |];
                             |]
-                | Some(arr) -> pairwisePathSearch data arr
+                | FromArray(arr) -> pairwisePathSearch data arr ignoreSelfLoops
+                | FromFile(name) -> let arr = [| for line in File.ReadLines(name) do 
+                                                    yield line |]
+                                    pairwisePathSearch data arr ignoreSelfLoops
     let interactions =  match inputGenes with 
-                        | None -> None
-                        | Some(_) -> Some(buildEdgeDictionary paths data)
+                        | Demo -> None
+                        | _ -> Some(buildEdgeDictionary paths data)
     estimateComplexity <| Data(paths)
-    let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
+    let geneNames = Array.collect Array.concat paths |> Array.distinct
 
     let ctx = new Context()
     //This could be done with bitvectors and a manual numbering scheme but enumsort are converted anyway..
