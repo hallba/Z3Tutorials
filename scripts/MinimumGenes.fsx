@@ -36,6 +36,126 @@ open Microsoft.Msagl.Layout.Incremental
 open Microsoft.Msagl.Prototype.Ranking
 open Microsoft.Msagl.Miscellaneous
 
+#r "../packages/FSharp.Data/lib/net45/FSharp.Data.dll"
+open FSharp.Data
+
+let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
+type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1">
+
+let omni = OmniPath.Load(interactionURL+"&genesymbols=1")
+let data = omni.Rows |> Seq.filter (fun x -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation))
+
+type PartialPath = 
+    {
+        parent : PartialPath option
+        name :string
+    } with 
+    member this.ToArray = let rec core partial path = 
+                            match partial.parent with 
+                            | None -> (partial.name::path) |> Array.ofList
+                            | Some(n) -> core n (partial.name::path)
+                          core this []
+    //Get the sign and references for the links
+    member this.ToEdgeInfo =    
+        let rec core partial path =
+                match partial.parent with
+                | None -> ()
+                | Some(n) -> ()
+        core this []
+
+type xNode = 
+    {
+        sname: string
+        vertexId : int
+        edges : OmniPath.Row list
+    }
+
+type InteractionType = Activator | Inhibitor
+
+type InteractionInput = {
+    source : string
+    target : string
+    description : string
+    kind: InteractionType
+    link: string
+}
+
+let edgesToVertex data =
+    let vertices = new Dictionary<string,OmniPath.Row list>()
+    let dataArray = data |> Array.ofSeq
+    Array.iter (fun (edge: OmniPath.Row) -> match vertices.TryGetValue edge.Source_genesymbol with
+                                            | true, v -> vertices.[edge.Source_genesymbol] <- edge::v
+                                            | _,_ -> vertices.Add(edge.Source_genesymbol,[edge])
+        ) dataArray
+    let vertexNames = vertices.Keys |> Array.ofSeq
+    let numberSource = vertexNames |> Array.length
+    let verticesArr = Array.init numberSource (fun i -> {edges = vertices.[vertexNames.[i]]; sname=vertexNames.[i]; vertexId=i} )
+    let lookUp = new Dictionary<string,int>()
+    Array.iteri (fun i name -> lookUp.Add(name,i)) vertexNames
+    lookUp, verticesArr
+
+let allShortestPaths source target data =
+    let lookUp, vertices = edgesToVertex data
+
+    let getNextNodes source =
+        match lookUp.TryGetValue source.name with 
+        | true, n -> 
+            let n = vertices.[n]
+            List.map (fun (e:OmniPath.Row) -> {name=e.Target_genesymbol;parent=Some(source)} ) n.edges
+            |> Array.ofList
+        | _ -> [||]
+
+    let rec core queue visited =
+        //For every item in the queue, find the next nodes and create a new queue from them
+        let queue' = Array.collect getNextNodes queue |> Array.filter (fun n -> not (Array.contains n.name visited) )
+        let visited' = Array.concat [|visited; (Array.map (fun p -> p.name) queue')|]
+        let success = Array.filter (fun x -> x.name = target) queue'
+        if (Array.isEmpty queue') then
+            [||]
+        else if (Array.length success > 0) then
+            success
+        else
+            core queue' visited'
+    core [|{name=source;parent=None}|] [||]
+    |> Array.map (fun p -> p.ToArray)
+//Uses paths and the ominpath data to create a dictionary of connections
+let buildEdgeDictionary paths data =
+    let getEdges (lookUp: Dictionary<string,int>) (vertices: xNode []) (d: Dictionary<string,InteractionInput>) path =
+        let edgeNumber = Array.length path - 2
+        for i=0 to edgeNumber do  
+            let source = path.[i]
+            let target = path.[i+1]
+            let identifier = sprintf "%s>%s" source target
+            match d.TryGetValue identifier with 
+            | true, v -> ()
+            | _ -> 
+                let omniEdge = vertices.[lookUp.[source]].edges |> List.filter (fun x -> x.Target_genesymbol=target) |> List.last
+                let kind,sKind =  match omniEdge.Is_stimulation, omniEdge.Is_inhibition with
+                            | true, false -> "Activator", Activator
+                            | false, true -> "Inhibitor", Inhibitor
+                            | false, false -> "Unknown", Activator
+                            | _ -> "Mixed", Activator
+                let description = sprintf " %s %s-PMID:%s" source kind omniEdge.References
+                let inter = {
+                            source = source
+                            target=target
+                            kind=sKind
+                            description=description
+                            link=identifier
+                            }
+                d.Add(identifier, inter)
+        
+    let lookUp, vertices = edgesToVertex data
+    let edgeDescriptions = new Dictionary<string,InteractionInput>()
+    Array.iter (Array.iter (getEdges lookUp vertices edgeDescriptions)) paths
+    edgeDescriptions
+
+
+let pairwisePathSearch data genes =
+    Array.collect (fun geneI -> Array.map (fun geneJ -> allShortestPaths geneI geneJ data) genes ) genes
+    |> Array.filter (fun pSet -> pSet<>[||])
+
+
 type BmaVariable = {
                         id: int
                         name: string
@@ -53,16 +173,6 @@ type BmaRelationship = {
                         }
 
 type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
-
-type InteractionType = Activator | Inhibitor
-
-type InteractionInput = {
-    source : string
-    target : string
-    description : string
-    kind: InteractionType
-    link: string
-}
 
 type graphInput = {
     ctx : Context
@@ -275,8 +385,8 @@ let estimateComplexity source =
     |> printf "10^%f alternatives to be searched\n"
 
 
-let main fromFile interactionFile =
-    let paths = match fromFile with
+let main inputGenes =
+    let paths = match inputGenes with
                 | None ->   [|
                                   [|
                                       [|"U";"A";"B";"C";"V"|]
@@ -291,10 +401,10 @@ let main fromFile interactionFile =
                                       [|"Y";"D";"Z";|]
                                   |];
                             |]
-                | Some(name) -> readFile name
-    let interactions =  match interactionFile with 
+                | Some(arr) -> pairwisePathSearch data arr
+    let interactions =  match inputGenes with 
                         | None -> None
-                        | Some(name) -> Some(readInteractionsFile name)
+                        | Some(_) -> Some(buildEdgeDictionary paths data)
     estimateComplexity <| Data(paths)
     let geneNames = Array.map Array.concat paths |> Array.concat |> Array.distinct
 
