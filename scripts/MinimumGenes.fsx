@@ -119,35 +119,46 @@ let allShortestPaths source target data =
     core [|{name=source;parent=None}|] [||]
     |> Array.map (fun p -> p.ToArray)
 //Uses paths and the ominpath data to create a dictionary of connections
-let buildEdgeDictionary paths data =
+let buildEdgeDictionary paths data maximal =
     let getEdges (lookUp: Dictionary<string,int>) (vertices: Vertex []) (d: Dictionary<string,InteractionInput>) path =
         let edgeNumber = Array.length path - 2
         for i=0 to edgeNumber do  
             let source = path.[i]
             let target = path.[i+1]
             let identifier = sprintf "%s>%s" source target
-            match d.TryGetValue identifier with 
-            | true, v -> ()
+            match d.TryGetValue identifier, lookUp.TryGetValue source with 
+            | (true, _), (_,_) -> ()
+            | (_, _), (false,_) -> ()
             | _ -> 
-                let omniEdge = vertices.[lookUp.[source]].edges |> List.filter (fun x -> x.Target_genesymbol=target) |> List.last
-                let kind,sKind =  match omniEdge.Is_stimulation, omniEdge.Is_inhibition with
-                            | true, false -> "Activator", Activator
-                            | false, true -> "Inhibitor", Inhibitor
-                            | false, false -> "Unknown", Activator
-                            | _ -> "Mixed", Activator
-                let description = sprintf " %s %s-PMID:%s" source kind omniEdge.References
-                let inter = {
-                            source = source
-                            target=target
-                            kind=sKind
-                            description=description
-                            link=identifier
-                            }
-                d.Add(identifier, inter)
+                //the next line will fail if the gene is not a source in the omnipath lookup
+                let edge = vertices.[lookUp.[source]].edges |> List.filter (fun x -> x.Target_genesymbol=target) 
+                match edge with 
+                | [] -> ()
+                | _ -> 
+                    let omniEdge = edge |> List.last
+                    let kind,sKind =  match omniEdge.Is_stimulation, omniEdge.Is_inhibition with
+                                        | true, false -> "Activator", Activator
+                                        | false, true -> "Inhibitor", Inhibitor
+                                        | false, false -> "Unknown", Activator
+                                        | _ -> "Mixed", Activator
+                    let description = sprintf " %s %s-PMID:%s" source kind omniEdge.References
+                    let inter = {
+                                source = source
+                                target=target
+                                kind=sKind
+                                description=description
+                                link=identifier
+                                }
+                    d.Add(identifier, inter)
         
     let lookUp, vertices = edgesToVertex data
     let edgeDescriptions = new Dictionary<string,InteractionInput>()
-    Array.iter (Array.iter (getEdges lookUp vertices edgeDescriptions)) paths
+    if maximal then 
+        let allGenes = Array.concat paths |> Array.concat
+        let allPairs = Array.collect (fun x -> Array.map (fun y -> [|x;y|]) allGenes) allGenes
+        Array.iter (getEdges lookUp vertices edgeDescriptions) allPairs
+    else 
+        Array.iter (Array.iter (getEdges lookUp vertices edgeDescriptions)) paths
     edgeDescriptions
 
 
@@ -197,6 +208,7 @@ type GraphInput = {
     genes : string []
     layout: LayoutSelection
     interactionInfo : Dictionary<string,InteractionInput> option
+    maxEdges : Boolean
 }
 
 let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
@@ -237,7 +249,24 @@ let makeGraphInternal gI =
                 | false,_ ->    foundEdges.Add((source,target),true)
                                 makeEdge graph source target
                 | _,_ -> ()
-        Array.iter getEdgesPath paths 
+        if gI.maxEdges then
+            //We need the keys of the edge annotation dictionary, the genes that are present. 
+            //Filter by the genes present, and then add everything else
+            let pairArray = Array.map (fun g-> (g,gI.ctx.MkBoolConst(sprintf "Used-%s" g ))) gI.genes
+            let mutable used = []
+            for g,zg in pairArray do
+                let state = sprintf "%O" (gI.m.Eval(zg,true))
+                if state = "true" then 
+                    used <- g::used
+            let allEdges = gI.interactionInfo.Value.Keys |> Array.ofSeq
+            let edges = List.collect (fun i -> List.map (fun j -> i,j) used ) used
+                        |> List.filter (fun x -> Array.contains (sprintf "%s>%s" (fst(x)) (snd(x))) allEdges)
+            for source,target in edges do
+                foundEdges.Add((source,target),true)
+                makeEdge graph source target
+
+        else
+            Array.iter getEdgesPath paths 
     let graph = GeometryGraph()
     //Add nodes
     //makeNode graph radius "A"
@@ -331,7 +360,7 @@ let makeGraphInternal gI =
     Clipboard.SetText(result)
     printf "%s" result 
 
-let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData =
+let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData maxEdges =
     let gI = {
         ctx = ctx
         m = m
@@ -340,6 +369,7 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData =
         genes = genes
         layout = layoutAlgo
         interactionInfo = intData
+        maxEdges = maxEdges
     }
     makeGraphInternal gI
     gI
@@ -406,13 +436,15 @@ type MainInput =
         genesSource : GeneData
         includeSelfLoops : Boolean
         oneDirection : Boolean
+        maximiseEdges : Boolean
     }
 
 let defaultInput = 
     {
         genesSource = Demo
         includeSelfLoops = false
-        oneDirection = false
+        oneDirection = true
+        maximiseEdges = false
     }
 
 let main input =
@@ -438,7 +470,7 @@ let main input =
                                     search data arr input.includeSelfLoops
     let interactions =  match input.genesSource with 
                         | Demo -> None
-                        | _ -> Some(buildEdgeDictionary paths data)
+                        | _ -> Some(buildEdgeDictionary paths data input.maximiseEdges)
     estimateComplexity <| Data(paths)
     let geneNames = Array.collect Array.concat paths |> Array.distinct
 
@@ -510,7 +542,7 @@ let main input =
             printf "sat\n"
             //printf "%s\n" <| s.Model.ToString()
             printGenes ctx s.Model geneNames
-            let result = makeGraph ctx s.Model genes paths geneNames Sugiyama interactions
+            let result = makeGraph ctx s.Model genes paths geneNames Sugiyama interactions input.maximiseEdges
             //Return both inputs for makeGraphInternal to enable replotting
             Some(result)
         | Status.UNSATISFIABLE -> 
