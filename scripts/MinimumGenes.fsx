@@ -151,10 +151,25 @@ let buildEdgeDictionary paths data =
     edgeDescriptions
 
 
-let pairwisePathSearch data genes ignoreSelfLoops=
-    Array.collect (fun geneI -> Array.map (fun geneJ -> if ignoreSelfLoops || geneI <> geneJ then allShortestPaths geneI geneJ data else [||]) genes ) genes
+let pairwisePathSearch data genes includeSelfLoops=
+    Array.collect (fun geneI -> Array.map (fun geneJ -> if includeSelfLoops || geneI <> geneJ then allShortestPaths geneI geneJ data else [||]) genes ) genes
     |> Array.filter (fun pSet -> pSet<>[||])
 
+let OneDirectionalPathSearch data genes includeSelfLoops =
+    Array.mapi (fun i geneI -> 
+        Array.mapi (fun j geneJ -> 
+            if (i>=j) && (includeSelfLoops || geneI <> geneJ)
+            then 
+                let ij = allShortestPaths geneI geneJ data 
+                let ji = allShortestPaths geneJ geneI data
+                if Array.isEmpty ij && Array.isEmpty ji then [||]
+                else if Array.isEmpty ij then ji
+                else if Array.isEmpty ji then ij
+                else if Array.length ij.[0] < Array.length ji.[0] then ij else ji
+            else [||]) genes ) 
+            genes
+    |> Array.concat
+    |> Array.filter (fun pSet -> pSet<>[||])
 
 type BmaVariable = {
                         id: int
@@ -384,10 +399,25 @@ let estimateComplexity source =
     Array.sumBy (Array.length >> float >> Math.Log10) data
     |> printf "10^%f alternatives to be searched\n"
 
-type MainInput = Demo | FromArray of string [] | FromFile of string
+type GeneData =  Demo | FromArray of string [] | FromFile of string
 
-let main inputGenes ignoreSelfLoops =
-    let paths = match inputGenes with
+type MainInput = 
+    {
+        genesSource : GeneData
+        includeSelfLoops : Boolean
+        oneDirection : Boolean
+    }
+
+let defaultInput = 
+    {
+        genesSource = Demo
+        includeSelfLoops = false
+        oneDirection = false
+    }
+
+let main input =
+    let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
+    let paths = match input.genesSource with
                 | Demo ->   [|
                                   [|
                                       [|"U";"A";"B";"C";"V"|]
@@ -402,11 +432,11 @@ let main inputGenes ignoreSelfLoops =
                                       [|"Y";"D";"Z";|]
                                   |];
                             |]
-                | FromArray(arr) -> pairwisePathSearch data arr ignoreSelfLoops
+                | FromArray(arr) -> search data arr input.includeSelfLoops
                 | FromFile(name) -> let arr = [| for line in File.ReadLines(name) do 
                                                     yield line |]
-                                    pairwisePathSearch data arr ignoreSelfLoops
-    let interactions =  match inputGenes with 
+                                    search data arr input.includeSelfLoops
+    let interactions =  match input.genesSource with 
                         | Demo -> None
                         | _ -> Some(buildEdgeDictionary paths data)
     estimateComplexity <| Data(paths)
