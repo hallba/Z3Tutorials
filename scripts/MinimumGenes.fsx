@@ -209,7 +209,22 @@ type GraphInput = {
     layout: LayoutSelection
     interactionInfo : Dictionary<string,InteractionInput> option
     maxEdges : Boolean
-}
+    s : Optimize
+} with 
+    member this.Next = 
+        let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
+        let values = Array.map (fun var -> this.m.Eval(var)) variables
+        let constraints = Array.map2 (fun var value -> (this.ctx.MkEq(var,value))) variables values
+        this.s.Add(this.ctx.MkNot(this.ctx.MkAnd(constraints)))
+        match this.s.Check() with
+        | Status.SATISFIABLE -> 
+            printf "sat\n"
+            //Return both inputs for makeGraphInternal to enable replotting
+            Some({this with m=this.s.Model;s=this.s})
+        | Status.UNSATISFIABLE -> 
+            printf "unsat"
+            None
+        | _ -> failwith "unknown"
 
 let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
     match data with
@@ -360,7 +375,7 @@ let makeGraphInternal gI =
     Clipboard.SetText(result)
     printf "%s" result 
 
-let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData maxEdges =
+let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges =
     let gI = {
         ctx = ctx
         m = m
@@ -370,6 +385,7 @@ let makeGraph (ctx: Context) (m: Model) zGenes paths genes layoutAlgo intData ma
         layout = layoutAlgo
         interactionInfo = intData
         maxEdges = maxEdges
+        s = s
     }
     makeGraphInternal gI
     gI
@@ -437,6 +453,7 @@ type MainInput =
         includeSelfLoops : Boolean
         oneDirection : Boolean
         maximiseEdges : Boolean
+        exclusions : string [] option
     }
 
 let defaultInput = 
@@ -445,10 +462,16 @@ let defaultInput =
         includeSelfLoops = false
         oneDirection = true
         maximiseEdges = false
+        exclusions = None
     }
 
 let main input =
     let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
+    let data =  match input.exclusions with
+                        | None -> data
+                        | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) data
+
+    
     let paths = match input.genesSource with
                 | Demo ->   [|
                                   [|
@@ -542,7 +565,7 @@ let main input =
             printf "sat\n"
             //printf "%s\n" <| s.Model.ToString()
             printGenes ctx s.Model geneNames
-            let result = makeGraph ctx s.Model genes paths geneNames Sugiyama interactions input.maximiseEdges
+            let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
             //Return both inputs for makeGraphInternal to enable replotting
             Some(result)
         | Status.UNSATISFIABLE -> 
