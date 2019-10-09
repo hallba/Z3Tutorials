@@ -38,7 +38,20 @@ open Microsoft.Msagl.Miscellaneous
 
 #r "../packages/FSharp.Data/lib/net45/FSharp.Data.dll"
 open FSharp.Data
-
+(*
+These are URLs of Omnipath databases that have the same structure as the working example
+KinaseExtra (enzyme-substrate interactions)
+http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references
+DoRothEA (TF-target interactions)
+http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references
+miRNA targets (miRNA-mRNA and TF-miRNA interactions)
+http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references
+Everything in the same format
+http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references
+Also of interest (but will not work here)
+Complexes
+http://omnipathdb.org/complexes?&fields=sources,references
+*)
 let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
 type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1">
 
