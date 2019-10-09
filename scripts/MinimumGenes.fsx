@@ -225,6 +225,19 @@ type GraphInput = {
             printf "unsat"
             None
         | _ -> failwith "unknown"
+    member this.Exclude genes = 
+        let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) genes
+        let constraints = Array.map (fun var -> (this.ctx.MkEq(var,this.ctx.MkFalse()))) variables 
+        this.s.Add(this.ctx.MkAnd(constraints))
+        match this.s.Check() with
+        | Status.SATISFIABLE -> 
+            printf "sat\n"
+            //Return both inputs for makeGraphInternal to enable replotting
+            Some({this with m=this.s.Model;s=this.s})
+        | Status.UNSATISFIABLE -> 
+            printf "unsat"
+            None
+        | _ -> failwith "unknown"
 
 let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
     match data with
