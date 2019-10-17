@@ -512,8 +512,6 @@ let estimateComplexity source =
     let data = match source with 
                 | FileName(name) -> readFile name
                 | Data(res) -> res
-    if Array.sumBy Array.length data = 0 then 
-        failwith "No paths found"
     Array.sumBy (Array.length >> float >> Math.Log10) data
     |> printf "10^%f alternatives to be searched\n"
 
@@ -611,48 +609,50 @@ let main input =
     let interactions =  match input.genesSource with 
                         | Demo -> None
                         | _ -> Some(buildEdgeDictionary paths data input.maximiseEdges)
-    estimateComplexity <| Data(paths)
-    let geneNames = Array.collect Array.concat paths |> Array.distinct
+    
+    if Array.sumBy Array.length paths = 0 then printf "No paths found between genes\n"; None else
+        estimateComplexity <| Data(paths)
+        let geneNames = Array.collect Array.concat paths |> Array.distinct
 
-    let ctx = new Context()
-    //This could be done with bitvectors and a manual numbering scheme but enumsort are converted anyway..
-    let genes = ctx.MkEnumSort("genes",geneNames)
-    let pairs = Array.mapi (fun i g -> (g,genes.Consts.[i] )) geneNames |> Map.ofArray
+        let ctx = new Context()
+        //This could be done with bitvectors and a manual numbering scheme but enumsort are converted anyway..
+        let genes = ctx.MkEnumSort("genes",geneNames)
+        let pairs = Array.mapi (fun i g -> (g,genes.Consts.[i] )) geneNames |> Map.ofArray
 
-    let s = ctx.MkOptimize()
-    //let g = ctx.MkGoal()
-    let varnames,vars = Array.map (createVariables genes (pathToConstraint ctx) pairs ctx) paths 
-                        |> fun x -> 
-                            let names = Array.map fst x 
-                            let behaviour = Array.map snd x
-                            names,behaviour
+        let s = ctx.MkOptimize()
+        //let g = ctx.MkGoal()
+        let varnames,vars = Array.map (createVariables genes (pathToConstraint ctx) pairs ctx) paths 
+                            |> fun x -> 
+                                let names = Array.map fst x 
+                                let behaviour = Array.map snd x
+                                names,behaviour
 
-    Array.map (geneUsed ctx genes varnames pairs) geneNames
-    |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
+        Array.map (geneUsed ctx genes varnames pairs) geneNames
+        |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
 
-    let geneNumber = ctx.MkIntConst("GeneCount")
-    let boolToNumber (ctx: Context) n =
-        ctx.MkITE(ctx.MkBoolConst(sprintf "Used-%s" n), ctx.MkInt(1),ctx.MkInt(0)) :?> ArithExpr
-    let countGenes = Array.map (fun n -> boolToNumber ctx n) geneNames  |> fun x -> ctx.MkAdd(x)
-    let measure = ctx.MkEq(geneNumber,countGenes)
+        let geneNumber = ctx.MkIntConst("GeneCount")
+        let boolToNumber (ctx: Context) n =
+            ctx.MkITE(ctx.MkBoolConst(sprintf "Used-%s" n), ctx.MkInt(1),ctx.MkInt(0)) :?> ArithExpr
+        let countGenes = Array.map (fun n -> boolToNumber ctx n) geneNames  |> fun x -> ctx.MkAdd(x)
+        let measure = ctx.MkEq(geneNumber,countGenes)
 
-    s.Add(vars)   
-    //s.Add(countingElements) 
-    s.Add(measure)
-    ignore <| s.MkMinimize(geneNumber)
-    //printf "%s\n" <| s.ToString()
-    match s.Check() with
-        | Status.SATISFIABLE -> 
-            printf "sat\n"
-            //printf "%s\n" <| s.Model.ToString()
-            printGenes ctx s.Model geneNames
-            let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
-            //Return both inputs for makeGraphInternal to enable replotting
-            Some(result)
-        | Status.UNSATISFIABLE -> 
-            printf "unsat"
-            None
-        | _ -> failwith "unknown"
+        s.Add(vars)   
+        //s.Add(countingElements) 
+        s.Add(measure)
+        ignore <| s.MkMinimize(geneNumber)
+        //printf "%s\n" <| s.ToString()
+        match s.Check() with
+            | Status.SATISFIABLE -> 
+                printf "sat\n"
+                //printf "%s\n" <| s.Model.ToString()
+                printGenes ctx s.Model geneNames
+                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
+                //Return both inputs for makeGraphInternal to enable replotting
+                Some(result)
+            | Status.UNSATISFIABLE -> 
+                printf "unsat"
+                None
+            | _ -> failwith "unknown"
 
 type CrossTalkInput = 
     {
