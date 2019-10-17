@@ -55,8 +55,26 @@ http://omnipathdb.org/complexes?&fields=sources,references
 let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
 type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1">
 
-let omni = OmniPath.Load(interactionURL+"&genesymbols=1")
-let data = omni.Rows |> Seq.filter (fun x -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation))
+type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sources,references">
+
+//let omni = OmniPath.Load(interactionURL+"&genesymbols=1")
+//let data = omni.Rows |> Seq.filter (fun x -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation))
+
+//let omniComplex = OmniPathComplex.Load("http://omnipathdb.org/complexes?&fields=sources,references")
+//let complexData = omniComplex.Rows
+
+type OmniSource = PPI | Regulon | PTM | MiRNA | Pathways | Combo
+
+let getOmniData t strict =  let source = match t with 
+                                            | PPI -> "http://omnipathdb.org/interactions?fields=sources&fields=references&genesymbols=1"
+                                            | PTM -> "http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references&genesymbols=1"
+                                            | Regulon -> "http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references&genesymbols=1"
+                                            | MiRNA -> "http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references&genesymbols=1"
+                                            | Pathways -> "http://omnipathdb.org/interactions?datasets=pathwayextra&fields=sources,references&genesymbols=1"
+                                            | Combo -> "http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references&genesymbols=1"
+                            let data = OmniPath.Load(source)
+                            let filter = if strict then (fun (x: OmniPath.Row) -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation)) else (fun x -> true)
+                            data.Rows |> Seq.filter filter
 
 type PartialPath = 
     {
@@ -107,6 +125,32 @@ let edgesToVertex data =
     Array.iteri (fun i name -> lookUp.Add(name,i)) vertexNames
     lookUp, verticesArr
 
+let shortestPathLength source target data = 
+    let lookUp, vertices = edgesToVertex data
+
+    let getNextNodes visited source =
+        match lookUp.TryGetValue source with 
+        | true, n -> 
+            let n = vertices.[n]
+            List.map (fun (e:OmniPath.Row) -> e.Target_genesymbol ) n.edges
+            |> List.filter (fun name -> not (Array.contains name visited))
+            |> Array.ofList
+        | _ -> Array.empty
+
+    let rec core queue visited length =
+        //For every item in the queue, find the next nodes and create a new queue from them
+        let queue' = Array.collect (getNextNodes visited) queue 
+        let success = Array.contains target queue'
+        if success then
+            Some(length)
+        else if (Array.isEmpty queue') then
+            None
+        else
+            let visited' = Array.concat [|visited; queue'|]
+            core queue' visited' (length+1)
+    core [|source|] [||] 1
+    
+
 let allShortestPaths source target data =
     let lookUp, vertices = edgesToVertex data
 
@@ -123,10 +167,10 @@ let allShortestPaths source target data =
         let queue' = Array.collect getNextNodes queue |> Array.filter (fun n -> not (Array.contains n.name visited) )
         let visited' = Array.concat [|visited; (Array.map (fun p -> p.name) queue')|]
         let success = Array.filter (fun x -> x.name = target) queue'
-        if (Array.isEmpty queue') then
-            [||]
-        else if (Array.length success > 0) then
+        if (Array.length success > 0) then
             success
+        else if (Array.isEmpty queue') then
+            [||]
         else
             core queue' visited'
     core [|{name=source;parent=None}|] [||]
@@ -468,6 +512,8 @@ let estimateComplexity source =
     let data = match source with 
                 | FileName(name) -> readFile name
                 | Data(res) -> res
+    if Array.sumBy Array.length data = 0 then 
+        failwith "No paths found"
     Array.sumBy (Array.length >> float >> Math.Log10) data
     |> printf "10^%f alternatives to be searched\n"
 
@@ -480,6 +526,8 @@ type MainInput =
         oneDirection : Boolean
         maximiseEdges : Boolean
         exclusions : string [] option
+        database : OmniSource
+        strictFilter : bool
     }
 
 let defaultInput = 
@@ -489,34 +537,77 @@ let defaultInput =
         oneDirection = true
         maximiseEdges = false
         exclusions = None
+        database = PPI
+        strictFilter = true
     }
+
+//Has a gene been used in a path? 
+let localGeneUsed (ctx:Context) genes (pairMap:Map<string,Expr>) geneName pathID pathVars =
+    let usedVar = ctx.MkBoolConst(sprintf "PathUsed-%d-%s" pathID geneName)
+    let zGene = pairMap.[geneName]
+    let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
+    (usedVar,ctx.MkEq(usedVar,used))
+
+//Has a gene been used in a path? 
+let geneUsed (ctx:Context) genes pathVars (pairMap:Map<string,Expr>) geneName =
+    let usedVar = ctx.MkBoolConst(sprintf "Used-%s" geneName)
+    let zGene = pairMap.[geneName]
+    //let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
+    let lgu = localGeneUsed ctx genes pairMap geneName
+    let used,ind =  Array.mapi lgu pathVars
+                    |> fun r -> 
+                        let vars = Array.map fst r
+                        let individualPath = Array.map snd r
+                        //If any of the path vars are true, then the global var is
+                        (ctx.MkOr(vars),individualPath)
+    (ctx.MkEq(usedVar,used),ind)
+
+let createVariables genes pathToConstraint pairs (ctx:Context) (altPaths: string [] []) = 
+    //create a single set of variables that join the first and last elements
+    let example = altPaths.[0]
+    let namer =  
+        let pathname = sprintf "%s-%s-%d" example.[0] (Array.last example) 
+        fun i ->
+            ctx.MkConst((pathname i), genes)
+    //create an array of all variable names
+    let variableNames = Array.mapi (fun i _ -> namer i) altPaths.[0]
+    //specify that the paths should only be equal to the given paths
+    Array.map (pathToConstraint pairs namer) altPaths |> fun x -> (variableNames,ctx.MkOr(x))
+
+let pathToConstraint (ctx:Context) (pairs: Map<string,Expr>) namer path  = 
+    Array.mapi (fun i element -> ctx.MkEq((namer i),pairs.[element]) ) path
+    |> fun x -> ctx.MkAnd(x)
+
+let getPathsFromSource source data search selfLoops= 
+    match source with
+        | Demo ->   [|
+                          [|
+                              [|"U";"A";"B";"C";"V"|]
+                              [|"U";"A";"B";"D";"V"|]
+                              [|"U";"E";"F";"G";"V"|]
+                          |];
+                          [|
+                              [|"W";"A";"X"|]
+                          |];
+                          [|
+                              [|"Y";"E";"Z";|]
+                              [|"Y";"D";"Z";|]
+                          |];
+                    |]
+        | FromArray(arr) -> search data arr selfLoops
+        | FromFile(name) -> let arr = [| for line in File.ReadLines(name) do 
+                                            yield line |]
+                            search data arr selfLoops
 
 let main input =
     let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
+    let db = getOmniData input.database input.strictFilter
     let data =  match input.exclusions with
-                        | None -> data
-                        | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) data
+                        | None -> db
+                        | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) db
 
     
-    let paths = match input.genesSource with
-                | Demo ->   [|
-                                  [|
-                                      [|"U";"A";"B";"C";"V"|]
-                                      [|"U";"A";"B";"D";"V"|]
-                                      [|"U";"E";"F";"G";"V"|]
-                                  |];
-                                  [|
-                                      [|"W";"A";"X"|]
-                                  |];
-                                  [|
-                                      [|"Y";"E";"Z";|]
-                                      [|"Y";"D";"Z";|]
-                                  |];
-                            |]
-                | FromArray(arr) -> search data arr input.includeSelfLoops
-                | FromFile(name) -> let arr = [| for line in File.ReadLines(name) do 
-                                                    yield line |]
-                                    search data arr input.includeSelfLoops
+    let (paths: string [] [] []) = getPathsFromSource input.genesSource data search input.includeSelfLoops
     let interactions =  match input.genesSource with 
                         | Demo -> None
                         | _ -> Some(buildEdgeDictionary paths data input.maximiseEdges)
@@ -528,52 +619,16 @@ let main input =
     let genes = ctx.MkEnumSort("genes",geneNames)
     let pairs = Array.mapi (fun i g -> (g,genes.Consts.[i] )) geneNames |> Map.ofArray
 
-    let pathToConstraint (pairs: Map<string,Expr>) namer path  = 
-        Array.mapi (fun i element -> ctx.MkEq((namer i),pairs.[element]) ) path
-        |> fun x -> ctx.MkAnd(x)
-    let createVariables (ctx:Context) (altPaths: string [] []) = 
-        //create a single set of variables that join the first and last elements
-        let example = altPaths.[0]
-        let namer =  
-            let pathname = sprintf "%s-%s-%d" example.[0] (Array.last example) 
-            fun i ->
-                ctx.MkConst((pathname i), genes)
-        //create an array of all variable names
-        let variableNames = Array.mapi (fun i _ -> namer i) altPaths.[0]
-        //specify that the paths should only be equal to the given paths
-        Array.map (pathToConstraint pairs namer) altPaths |> fun x -> (variableNames,ctx.MkOr(x))
-
     let s = ctx.MkOptimize()
     //let g = ctx.MkGoal()
-    let varnames,vars = Array.map (createVariables ctx) paths 
+    let varnames,vars = Array.map (createVariables genes (pathToConstraint ctx) pairs ctx) paths 
                         |> fun x -> 
                             let names = Array.map fst x 
                             let behaviour = Array.map snd x
                             names,behaviour
 
-    //Has a gene been used in a path? 
-    let localGeneUsed (ctx:Context) genes (pairMap:Map<string,Expr>) geneName pathID pathVars =
-        let usedVar = ctx.MkBoolConst(sprintf "PathUsed-%d-%s" pathID geneName)
-        let zGene = pairMap.[geneName]
-        let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
-        (usedVar,ctx.MkEq(usedVar,used))
-
-    //Has a gene been used in a path? 
-    let geneUsed (ctx:Context) genes pathVars (pairMap:Map<string,Expr>) geneName =
-        let usedVar = ctx.MkBoolConst(sprintf "Used-%s" geneName)
-        let zGene = pairMap.[geneName]
-        //let used = Array.map (fun n -> ctx.MkEq(zGene,n)) pathVars |> fun x -> ctx.MkOr(x)
-        let lgu = localGeneUsed ctx genes pairMap geneName
-        let used,ind =  Array.mapi lgu pathVars
-                        |> fun r -> 
-                            let vars = Array.map fst r
-                            let individualPath = Array.map snd r
-                            //If any of the path vars are true, then the global var is
-                            (ctx.MkOr(vars),individualPath)
-        (ctx.MkEq(usedVar,used),ind)
-
-    let countingElements = Array.map (geneUsed ctx genes varnames pairs) geneNames
-                           |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
+    Array.map (geneUsed ctx genes varnames pairs) geneNames
+    |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
 
     let geneNumber = ctx.MkIntConst("GeneCount")
     let boolToNumber (ctx: Context) n =
@@ -598,3 +653,115 @@ let main input =
             printf "unsat"
             None
         | _ -> failwith "unknown"
+
+type CrossTalkInput = 
+    {
+        genesSource1 : GeneData
+        genesSource2 : GeneData
+        includeSelfLoops : Boolean
+        oneDirection : Boolean
+        maximiseEdges : Boolean
+        exclusions : string [] option
+        database : OmniSource
+        strictFilter : bool
+    }
+
+let defaultCrossTalkInput = 
+    {
+        genesSource1 = Demo
+        includeSelfLoops = false
+        oneDirection = true
+        maximiseEdges = false
+        exclusions = None
+        genesSource2 = Demo
+        database = PPI
+        strictFilter = true
+    }
+
+let crossTalk input = 
+    //Calculates the minimum distance between two sets of genes
+    //Then calculates the mininum set of genes for each pathway, and required to connect the two pathways
+    let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
+    let db = getOmniData input.database input.strictFilter
+    let data =  match input.exclusions with
+                        | None -> db
+                        | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) db
+
+    let data =  match input.exclusions with
+                        | None -> data
+                        | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) data
+    let paths1 = getPathsFromSource input.genesSource1 data search input.includeSelfLoops
+    let paths2 = getPathsFromSource input.genesSource2 data search input.includeSelfLoops
+
+    //Do the paths overlap? If so, continue as normal enforcing at least one connection
+
+    let geneNames1 = Array.collect Array.concat paths1 |> Array.distinct
+    let geneNames2 = Array.collect Array.concat paths2 |> Array.distinct
+
+    let overlap = Array.fold (fun acc gene -> if (Array.contains gene geneNames2) then gene::acc else acc ) [] geneNames1
+
+    match overlap with
+    | _::_ -> 
+        let geneNames = Array.append geneNames1 geneNames2 |> Array.distinct
+        let paths = Array.append paths1 paths2
+        
+        let ctx = new Context()
+        let interactions =  match input.genesSource1 with 
+                            | Demo -> None
+                            | _ -> Some(buildEdgeDictionary paths data input.maximiseEdges)
+        estimateComplexity <| Data(paths)
+        //This could be done with bitvectors and a manual numbering scheme but enumsort are converted anyway..
+        let genes = ctx.MkEnumSort("genes",geneNames)
+        let pairs = Array.mapi (fun i g -> (g,genes.Consts.[i] )) geneNames |> Map.ofArray
+
+        let s = ctx.MkOptimize()
+        //let g = ctx.MkGoal()
+        let varnames,vars = Array.map (createVariables genes (pathToConstraint ctx) pairs ctx) paths 
+                            |> fun x -> 
+                                let names = Array.map fst x 
+                                let behaviour = Array.map snd x
+                                names,behaviour
+        Array.map (geneUsed ctx genes varnames pairs) geneNames
+        |> Array.iter (fun (g,l) -> s.Add(l); s.Add(g))
+
+        let geneNumber = ctx.MkIntConst("GeneCount")
+        let boolToNumber (ctx: Context) n =
+            ctx.MkITE(ctx.MkBoolConst(sprintf "Used-%s" n), ctx.MkInt(1),ctx.MkInt(0)) :?> ArithExpr
+        let countGenes = Array.map (fun n -> boolToNumber ctx n) geneNames  |> fun x -> ctx.MkAdd(x)
+        let measure = ctx.MkEq(geneNumber,countGenes)
+
+        //Need to specify that at least one overlapping gene is enforced
+        s.Add(ctx.MkOr(List.map (fun n -> ctx.MkBoolConst(sprintf "Used-%s" n)) overlap))
+
+        s.Add(vars)   
+        //s.Add(countingElements) 
+        s.Add(measure)
+        ignore <| s.MkMinimize(geneNumber)
+        //printf "%s\n" <| s.ToString()
+        match s.Check() with
+            | Status.SATISFIABLE -> 
+                printf "sat\n"
+                //printf "%s\n" <| s.Model.ToString()
+                printGenes ctx s.Model geneNames
+                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
+                //Return both inputs for makeGraphInternal to enable replotting
+                Some(result)
+            | Status.UNSATISFIABLE -> 
+                printf "unsat"
+                None
+            | _ -> failwith "unknown"
+        
+    | _ -> 
+        //Sets of genes do not overlap. 
+        //Need to find the shortest paths between any genes in the sets and enforce one
+        // (or two for bidirectional) of those short links
+        let mutable shortest = None
+        for source in geneNames1 do
+            for target in geneNames2 do
+                match shortestPathLength source target data with
+                | None -> ()
+                | Some(l) -> match shortest with
+                                | None -> shortest <- Some(source,target,l)
+                                | Some(_,_,lOrig) -> if lOrig <= l then () else shortest <- Some(source,target,l)
+
+        failwith "Incomplete"
