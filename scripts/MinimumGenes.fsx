@@ -18,9 +18,12 @@ Want to find the smallest number of genes that link the original set
 
 open System
 open System.IO
+open System.IO.Compression
 open System.Collections.Generic
 open System.Windows.Forms
+open System.Diagnostics
 
+#r "System.IO.Compression.FileSystem.dll"
 #load "getZ3.fsx"
 
 #r "../platform/z3/bin/Microsoft.Z3.dll"
@@ -39,18 +42,18 @@ open Microsoft.Msagl.Miscellaneous
 #r "../packages/FSharp.Data/lib/net45/FSharp.Data.dll"
 open FSharp.Data
 (*
-These are URLs of Omnipath databases that have the same structure as the working example
-KinaseExtra (enzyme-substrate interactions)
-http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references
-DoRothEA (TF-target interactions)
-http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references
-miRNA targets (miRNA-mRNA and TF-miRNA interactions)
-http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references
-Everything in the same format
-http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references
-Also of interest (but will not work here)
-Complexes
-http://omnipathdb.org/complexes?&fields=sources,references
+    These are URLs of Omnipath databases that have the same structure as the working example
+    KinaseExtra (enzyme-substrate interactions)
+    http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references
+    DoRothEA (TF-target interactions)
+    http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references
+    miRNA targets (miRNA-mRNA and TF-miRNA interactions)
+    http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references
+    Everything in the same format
+    http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references
+    Also of interest (but will not work here)
+    Complexes
+    http://omnipathdb.org/complexes?&fields=sources,references
 *)
 let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
 type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1">
@@ -75,6 +78,35 @@ let getOmniData t strict =  let source = match t with
                             let data = OmniPath.Load(source)
                             let filter = if strict then (fun (x: OmniPath.Row) -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation)) else (fun x -> true)
                             data.Rows |> Seq.filter filter
+
+type OS =
+        | OSX        
+        | Windows
+        | Linux
+
+
+let getOS = 
+        match (int Environment.OSVersion.Platform) with
+        | (4 | 128) -> if File.Exists("/System/Library/CoreServices/SystemVersion.plist") then OSX else Linux
+        | 6     -> OSX
+        | _     -> Windows
+
+let macCopy (s: string) =
+    let p = new Process()
+    p.StartInfo <- new ProcessStartInfo("pbcopy", "-pboard general -Prefer txt")
+    p.StartInfo.UseShellExecute <- false
+    p.StartInfo.RedirectStandardOutput <- false
+    p.StartInfo.RedirectStandardInput <- true
+    p.Start()
+    p.StandardInput.Write(s)
+    p.StandardInput.Close()
+    p.WaitForExit()
+
+let sendToClipboard s = 
+    match getOS with
+    | Windows -> Clipboard.SetText(s)
+    | OSX -> macCopy s
+    | Linux -> ()
 
 type PartialPath = 
     {
@@ -442,7 +474,7 @@ let makeGraphInternal gI =
     let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
 
     let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
-    Clipboard.SetText(result)
+    sendToClipboard result
     printf "%s" result 
 
 let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges =
