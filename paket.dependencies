@@ -1,4 +1,5 @@
 source https://www.nuget.org/api/v2
+nuget Fsharp.data
 nuget FSharp.Interop.Dynamic
 nuget Microsoft.msagl
 nuget Rprovider
