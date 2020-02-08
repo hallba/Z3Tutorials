@@ -97,7 +97,7 @@ let macCopy (s: string) =
     p.StartInfo.UseShellExecute <- false
     p.StartInfo.RedirectStandardOutput <- false
     p.StartInfo.RedirectStandardInput <- true
-    p.Start()
+    p.Start() |> ignore
     p.StandardInput.Write(s)
     p.StandardInput.Close()
     p.WaitForExit()
@@ -299,6 +299,7 @@ type GraphInput = {
     interactionInfo : Dictionary<string,InteractionInput> option
     maxEdges : Boolean
     s : Optimize
+    rotation: float
 } with 
     member this.Next = 
         let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
@@ -327,6 +328,20 @@ type GraphInput = {
             printf "unsat"
             None
         | _ -> failwith "unknown"
+
+let findAllEquivalentGraphs g = 
+    let rec core (g: GraphInput) acc =
+        match g.Next with 
+        | None -> acc
+        | Some(g') -> core g' (g'::acc)
+    g.s.Push()
+    let gc = g.ctx.MkIntConst("GeneCount")
+    let modelScore = sprintf "%O" (g.m.Eval(gc,true) )
+    let score = g.ctx.MkInt(modelScore)
+    g.s.Add(g.ctx.MkEq(gc,score))
+    let result = core g [g]
+    g.s.Pop()
+    result
 
 let fancyInteractions (data: Dictionary<string,InteractionInput> option) source target =
     match data with
@@ -417,8 +432,10 @@ let makeGraphInternal gI =
 
     let bmaVariableModel bmaVar =
         sprintf "{\"Name\":\"%s\",\"Id\":%d,\"RangeFrom\":0,\"RangeTo\":%d,\"Formula\":\"%s\"}" bmaVar.name bmaVar.id bmaVar.granularity bmaVar.formula 
-    let bmaVariableLayout (bmaVar: BmaVariable) =
-        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\"}" bmaVar.id bmaVar.name bmaVar.x bmaVar.y bmaVar.description
+    let bmaVariableLayout angle (bmaVar: BmaVariable) =
+        let x' = bmaVar.x*cos(angle) - bmaVar.y*sin(angle)
+        let y' = bmaVar.x*sin(angle) + bmaVar.y*cos(angle)
+        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\"}" bmaVar.id bmaVar.name x' y' bmaVar.description
     let bmaRelationshipText bmaRel =
         sprintf "{\"Id\":%d,\"FromVariable\":%d,\"ToVariable\":%d,\"Type\":\"%s\"}" bmaRel.id bmaRel.source bmaRel.target bmaRel.kind
     let idMapping (n: Node IList) =
@@ -461,6 +478,8 @@ let makeGraphInternal gI =
             source = nameToID.[source]
             target = nameToID.[target]
         }
+    //Sugiyama looks great but goes up/down making gene names hard to read, so rotate if thats the case
+    //let rotation = if gI.layout = Sugiyama then Math.PI/2. else 0.
 
     //convert nodes into appropriate strings
     let nodeCount = graph.Nodes.Count
@@ -471,7 +490,7 @@ let makeGraphInternal gI =
                         |> fun x -> String.Join(",",x)
     let bmaVariables = Array.init nodeCount (fun i -> nodeToBmaVar graph.Nodes.[i] i )
     let varModel = Array.map bmaVariableModel bmaVariables |> fun x -> String.Join(",",x) 
-    let varLayout = Array.map bmaVariableLayout bmaVariables |> fun x -> String.Join(",",x) 
+    let varLayout = Array.map (bmaVariableLayout gI.rotation) bmaVariables |> fun x -> String.Join(",",x) 
 
     let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
     sendToClipboard result
@@ -488,6 +507,7 @@ let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData 
         interactionInfo = intData
         maxEdges = maxEdges
         s = s
+        rotation = 0.
     }
     makeGraphInternal gI
     gI
@@ -703,7 +723,7 @@ let defaultCrossTalkInput =
         genesSource1 = Demo
         includeSelfLoops = false
         oneDirection = true
-        maximiseEdges = false
+        maximiseEdges = true
         exclusions = None
         genesSource2 = Demo
         database = PPI
