@@ -255,6 +255,15 @@ let pairwisePathSearch data genes includeSelfLoops=
     Array.collect (fun geneI -> Array.map (fun geneJ -> if includeSelfLoops || geneI <> geneJ then allShortestPaths geneI geneJ data else [||]) genes ) genes
     |> Array.filter (fun pSet -> pSet<>[||])
 
+let oneDirectionalHubSearch hub data genes includeSelfLoops  =
+    Array.map (fun gene -> allShortestPaths hub gene data) genes
+    |> Array.filter (fun pSet -> pSet<>[||])
+
+let pairwiseHubSearch hub data genes includeSelfLoops  =
+    let downstream = Array.map (fun gene -> allShortestPaths hub gene data) genes |> Array.filter (fun pSet -> pSet<>[||])
+    let upstream = Array.map (fun gene -> allShortestPaths gene hub data) genes |> Array.filter (fun pSet -> pSet<>[||])
+    Array.append downstream upstream
+
 let OneDirectionalPathSearch data genes includeSelfLoops =
     Array.mapi (fun i geneI -> 
         Array.mapi (fun j geneJ -> 
@@ -578,6 +587,7 @@ type MainInput =
         exclusions : string [] option
         database : OmniSource
         strictFilter : bool
+        hubGene : string option //all genes should be downstream of this if defined
     }
 
 let defaultInput = 
@@ -589,6 +599,7 @@ let defaultInput =
         exclusions = None
         database = PPI
         strictFilter = true
+        hubGene = None
     }
 
 //Has a gene been used in a path? 
@@ -628,7 +639,7 @@ let pathToConstraint (ctx:Context) (pairs: Map<string,Expr>) namer path  =
     Array.mapi (fun i element -> ctx.MkEq((namer i),pairs.[element]) ) path
     |> fun x -> ctx.MkAnd(x)
 
-let getPathsFromSource source data search selfLoops= 
+let getPathsFromSource source data search selfLoops = 
     match source with
         | Demo ->   [|
                           [|
@@ -650,14 +661,19 @@ let getPathsFromSource source data search selfLoops=
                             search data arr selfLoops
 
 let main input =
-    let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
+    let search =    match input.hubGene,input.oneDirection with 
+                    | None,true -> OneDirectionalPathSearch
+                    | None,_ -> pairwisePathSearch
+                    | Some(hub),true -> oneDirectionalHubSearch hub
+                    | Some(hub),_ -> pairwiseHubSearch hub
+
     let db = getOmniData input.database input.strictFilter
     let data =  match input.exclusions with
                         | None -> db
                         | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) db
 
     
-    let (paths: string [] [] []) = getPathsFromSource input.genesSource data search input.includeSelfLoops
+    let (paths: string [] [] []) = getPathsFromSource input.genesSource data search input.includeSelfLoops 
     let interactions =  match input.genesSource with 
                         | Demo -> None
                         | _ -> Some(buildEdgeDictionary paths data input.maximiseEdges)
