@@ -56,7 +56,8 @@ open FSharp.Data
     http://omnipathdb.org/complexes?&fields=sources,references
 *)
 let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
-type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1">
+type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1", 
+                                    Schema="Is_directed=bool,Consensus_inhibition=bool,Consensus_stimulation=bool">
 
 type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sources,references">
 
@@ -833,3 +834,6 @@ let crossTalk input =
                                 | Some(_,_,lOrig) -> if lOrig <= l then () else shortest <- Some(source,target,l)
 
         failwith "Incomplete"
+
+fsi.ShowDeclarationValues <- false
+
