@@ -20,7 +20,6 @@ open System
 open System.IO
 open System.IO.Compression
 open System.Collections.Generic
-open System.Windows.Forms
 open System.Diagnostics
 
 #r "System.IO.Compression.FileSystem.dll"
@@ -103,9 +102,17 @@ let macCopy (s: string) =
     p.StandardInput.Close()
     p.WaitForExit()
 
+let winCopy (s: string) =
+    File.WriteAllText ("tmp.json", s)
+    let p = new Process()
+    p.StartInfo <- new ProcessStartInfo("CMD.exe", "/C clip < tmp.json")
+    p.StartInfo.UseShellExecute <- false
+    p.Start() |> ignore
+    p.WaitForExit()
+
 let sendToClipboard s = 
     match getOS with
-    | Windows -> Clipboard.SetText(s)
+    | Windows -> winCopy s
     | OSX -> macCopy s
     | Linux -> ()
 
