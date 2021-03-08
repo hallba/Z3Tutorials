@@ -312,6 +312,7 @@ type GraphInput = {
     zGenes : Sort
     paths : string [] [] []
     genes : string []
+    inputGenes : string []
     layout: LayoutSelection
     interactionInfo : Dictionary<string,InteractionInput> option
     maxEdges : Boolean
@@ -452,7 +453,10 @@ let makeGraphInternal gI =
     let bmaVariableLayout angle (bmaVar: BmaVariable) =
         let x' = bmaVar.x*cos(angle) - bmaVar.y*sin(angle)
         let y' = bmaVar.x*sin(angle) + bmaVar.y*cos(angle)
-        sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\"}" bmaVar.id bmaVar.name x' y' bmaVar.description
+        if Array.contains bmaVar.name gI.inputGenes then
+            sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\",\"Fill\": \"BMA_Green\"}" bmaVar.id bmaVar.name x' y' bmaVar.description
+        else 
+            sprintf "{\"Id\":%d,\"Name\":\"%s\",\"Type\":\"Constant\",\"ContainerId\":0,\"PositionX\":%f,\"PositionY\":%f,\"CellX\":0,\"CellY\":0,\"Angle\":0,\"Description\":\"%s\"}" bmaVar.id bmaVar.name x' y' bmaVar.description
     let bmaRelationshipText bmaRel =
         sprintf "{\"Id\":%d,\"FromVariable\":%d,\"ToVariable\":%d,\"Type\":\"%s\"}" bmaRel.id bmaRel.source bmaRel.target bmaRel.kind
     let idMapping (n: Node IList) =
@@ -513,7 +517,7 @@ let makeGraphInternal gI =
     sendToClipboard result
     printf "%s" result 
 
-let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges =
+let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input=
     let gI = {
         ctx = ctx
         m = m
@@ -525,6 +529,7 @@ let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData 
         maxEdges = maxEdges
         s = s
         rotation = 0.
+        inputGenes = input
     }
     makeGraphInternal gI
     gI
@@ -722,7 +727,12 @@ let main input =
                 printf "sat\n"
                 //printf "%s\n" <| s.Model.ToString()
                 printGenes ctx s.Model geneNames
-                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
+                let inputGenes = match input.genesSource with
+                                 | Demo -> [||]
+                                 | FromArray(a) -> a
+                                 | FromFile(name) -> [| for line in File.ReadLines(name) do 
+                                                        yield line |]
+                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes
                 //Return both inputs for makeGraphInternal to enable replotting
                 Some(result)
             | Status.UNSATISFIABLE -> 
