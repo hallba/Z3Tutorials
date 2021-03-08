@@ -4,3 +4,6 @@
 packages/
 paket-files/paket.restore.cached
 platform/
+z3.zip
+settings.json
+paket.exe
