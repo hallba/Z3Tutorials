@@ -67,17 +67,24 @@ type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sour
 //let complexData = omniComplex.Rows
 
 type OmniSource = PPI | Regulon | PTM | MiRNA | Pathways | Combo
+type Organism = Human | Mouse | Rat
 
-let getOmniData t strict =  let source = match t with 
-                                            | PPI -> "http://omnipathdb.org/interactions?fields=sources&fields=references&genesymbols=1"
-                                            | PTM -> "http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references&genesymbols=1"
-                                            | Regulon -> "http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references&genesymbols=1"
-                                            | MiRNA -> "http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references&genesymbols=1"
-                                            | Pathways -> "http://omnipathdb.org/interactions?datasets=pathwayextra&fields=sources,references&genesymbols=1"
-                                            | Combo -> "http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references&genesymbols=1"
-                            let data = OmniPath.Load(source)
-                            let filter = if strict then (fun (x: OmniPath.Row) -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation)) else (fun x -> true)
-                            data.Rows |> Seq.filter filter
+let getOmniData t strict o =  
+        let oMod = match o with
+                    | Human -> ""
+                    | Mouse -> "&organisms=10090"
+                    | Rat -> "&organisms=10116"
+        let source = match t with 
+                        | PPI -> "http://omnipathdb.org/interactions?fields=sources&fields=references&genesymbols=1" 
+                        | PTM -> "http://omnipathdb.org/interactions?datasets=kinaseextra&fields=sources&fields=references&genesymbols=1"
+                        | Regulon -> "http://omnipathdb.org/interactions?datasets=tfregulons&fields=sources&fields=references&genesymbols=1"
+                        | MiRNA -> "http://omnipathdb.org/interactions?datasets=mirnatarget&fields=sources,references&genesymbols=1"
+                        | Pathways -> "http://omnipathdb.org/interactions?datasets=pathwayextra&fields=sources,references&genesymbols=1"
+                        | Combo -> "http://omnipathdb.org/interactions?datasets=omnipath,pathwayextra,kinaseextra,ligrecextra,tfregulons,mirnatarget&fields=sources,references&genesymbols=1"
+                    |> fun x -> x + oMod 
+        let data = OmniPath.Load(source)
+        let filter = if strict then (fun (x: OmniPath.Row) -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation)) else (fun x -> true)
+        data.Rows |> Seq.filter filter
 
 type OS =
         | OSX        
@@ -306,6 +313,20 @@ type BmaRelationship = {
 
 type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
 
+let countUsedGenes (ctx:Context) geneNames (m:Model)=
+                let mutable used = 0
+                let pairArray = Array.map (fun g-> (g,ctx.MkBoolConst(sprintf "Used-%s" g ))) geneNames
+                for g,zg in pairArray do
+                    let state = sprintf "%O" (m.Eval(zg,true))
+                    if state = "true" then 
+                        printf "%s\n" g
+                        used <- used + 1
+                used
+
+let printGenes (ctx:Context) (m:Model) genes =
+    let used = countUsedGenes ctx genes m
+    printf "%d of %d genes used\n" used <| Array.length genes
+
 type GraphInput = {
     ctx : Context
     m : Model
@@ -318,6 +339,7 @@ type GraphInput = {
     maxEdges : Boolean
     s : Optimize
     rotation: float
+    numberGenesUsed: int
 } with 
     member this.Next = 
         let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
@@ -328,7 +350,10 @@ type GraphInput = {
         | Status.SATISFIABLE -> 
             printf "sat\n"
             //Return both inputs for makeGraphInternal to enable replotting
-            Some({this with m=this.s.Model;s=this.s})
+            printGenes this.ctx this.s.Model this.genes
+            let used = countUsedGenes this.ctx this.genes this.s.Model
+            let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges
+            Some({this with m=this.s.Model;s=this.s;numberGenesUsed=used})
         | Status.UNSATISFIABLE -> 
             printf "unsat"
             None
@@ -517,7 +542,7 @@ let makeGraphInternal gI =
     sendToClipboard result
     printf "%s" result 
 
-let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input=
+let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input used=
     let gI = {
         ctx = ctx
         m = m
@@ -530,6 +555,7 @@ let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData 
         s = s
         rotation = 0.
         inputGenes = input
+        numberGenesUsed = used
     }
     makeGraphInternal gI
     gI
@@ -538,16 +564,6 @@ let parsePath (line:string) =
     line.Split '#'
     |> fun x -> x.[..((Array.length x) - 2)]
     |> Array.map (fun (p:String) -> p.Split ',')
-
-let printGenes (ctx:Context) (m:Model) genes =
-    let pairArray = Array.map (fun g-> (g,ctx.MkBoolConst(sprintf "Used-%s" g ))) genes
-    let mutable used = 0
-    for g,zg in pairArray do
-        let state = sprintf "%O" (m.Eval(zg,true))
-        if state = "true" then 
-            printf "%s\n" g
-            used <- used + 1
-    printf "%d of %d genes used\n" used <| Array.length genes
 
 type DataSource = FileName of string | Data of string [] [] []
 
@@ -601,6 +617,7 @@ type MainInput =
         database : OmniSource
         strictFilter : bool
         hubGene : string option //all genes should be downstream of this if defined
+        source: Organism
     }
 
 let defaultInput = 
@@ -613,6 +630,7 @@ let defaultInput =
         database = PPI
         strictFilter = true
         hubGene = None
+        source = Human
     }
 
 //Has a gene been used in a path? 
@@ -680,7 +698,7 @@ let main input =
                     | Some(hub),true -> oneDirectionalHubSearch hub
                     | Some(hub),_ -> pairwiseHubSearch hub
 
-    let db = getOmniData input.database input.strictFilter
+    let db = getOmniData input.database input.strictFilter input.source
     let data =  match input.exclusions with
                         | None -> db
                         | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) db
@@ -732,7 +750,10 @@ let main input =
                                  | FromArray(a) -> a
                                  | FromFile(name) -> [| for line in File.ReadLines(name) do 
                                                         yield line |]
-                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes
+                
+                let used = countUsedGenes ctx geneNames s.Model
+
+                let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes used
                 //Return both inputs for makeGraphInternal to enable replotting
                 Some(result)
             | Status.UNSATISFIABLE -> 
@@ -750,6 +771,7 @@ type CrossTalkInput =
         exclusions : string [] option
         database : OmniSource
         strictFilter : bool
+        source : Organism
     }
 
 let defaultCrossTalkInput = 
@@ -762,13 +784,14 @@ let defaultCrossTalkInput =
         genesSource2 = Demo
         database = PPI
         strictFilter = true
+        source = Human
     }
 
 let crossTalk input = 
     //Calculates the minimum distance between two sets of genes
     //Then calculates the mininum set of genes for each pathway, and required to connect the two pathways
     let search = if input.oneDirection then OneDirectionalPathSearch else pairwisePathSearch
-    let db = getOmniData input.database input.strictFilter
+    let db = getOmniData input.database input.strictFilter input.source
     let data =  match input.exclusions with
                         | None -> db
                         | Some(x) -> Seq.filter (fun (row:OmniPath.Row) -> Array.contains row.Source_genesymbol x || Array.contains row.Target_genesymbol x |> not ) db
