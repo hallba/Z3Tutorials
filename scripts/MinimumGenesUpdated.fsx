@@ -55,6 +55,13 @@ open Microsoft.Msagl.Miscellaneous
 *)
 let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
 
+(*
+OmniPathData: 
+    - Defines types (OmniPathData, OmniPathComplex, OmniSource, Organism) and function (getOmniData) 
+    to load and filter interaction data from Omnipath API
+    - Supports different datasets (OmniSource)
+    - Uses CsvProvider for typed CSV data loading, to enable type-safe operations on data
+*)
 module OmniPathData =
     type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1", 
                                         Schema="Is_directed=bool,Consensus_inhibition=bool,Consensus_stimulation=bool">
@@ -88,6 +95,12 @@ module OmniPathData =
             data.Rows |> Seq.filter filter
 
 open OmniPathData
+
+(*
+Clipboard: 
+    - Provides cross-platform clipboard support for Windows, macOS, Linux
+    - Detects the OS and implements OS specific clipboard commands
+*)
 
 module Clipboard =
     type OS =
@@ -126,6 +139,12 @@ module Clipboard =
         | Linux -> ()
 open Clipboard
 
+(*
+GraphTypes: 
+    - PartialPath: represents nodes in a path with parent linkage
+    - Vertex: represents graph nodes with edges as OmniPath rows
+    - InteractionType & InteractionInput describe types and details of interactions
+*)
 module GraphTypes = 
     type PartialPath = 
         {
@@ -164,6 +183,12 @@ module GraphTypes =
         link: string
     }
 open GraphTypes
+
+(*
+GraphBuilder: 
+    - Converts OmniPath data into vertex structures indexed by gene symbol 
+    - Builds dictionaries of edges and their interaction metadata from paths and data 
+*)
 
 module GraphBuilder = 
     let edgesToVertex data =
@@ -225,6 +250,9 @@ module GraphBuilder =
 
 open GraphBuilder
 
+(*
+    - 
+*)
 module PathFinding = 
     let shortestPathLength source target data = 
         let lookUp, vertices = edgesToVertex data
@@ -307,6 +335,11 @@ module PathFinding =
 
 open PathFinding
     
+(*
+GeneTypes: Defines types related to gene network modeling and input: variables, relationships, layout choices, 
+input gene sources, main in put configurations
+*)
+
 module GeneTypes =
     type BmaVariable = {
                             id: int
@@ -371,6 +404,10 @@ module GeneTypes =
 
 open GeneTypes
 
+(*
+GeneIO:    
+    - Parse files for gene paths and interaction data 
+*)
 module GeneIO =
     let parsePath (line:string) = 
         line.Split '#'
@@ -408,6 +445,20 @@ module GeneIO =
             interactionType.Add(interaction.link,interaction)
         interactionType
 open GeneIO
+
+(*
+GeneUtils: Provides utility functions to work with genes, by interacting with the Z3 SMT solver context and model
+    - countUsedGenes: iterates over all genes and checks in the Z3 model whether each gene is used. 
+    - printGenes: prints out count of used genes
+    - fancyInteractions: given an optional dictionary of interaction data and 2 genes (source, target), tries
+    to retrieve the interaction details for that edge if it's available
+    - localGeneUsed: for a given gene and a path ID, constructs a Z3 boolean variable representing 
+    whether that gene is used in a specific path, by checking if the gene matches any variable in the path.
+    - createVariables and pathToConstraint: generating Z3 variables representing paths and constraining these to match 
+    specific gene sequences 
+    - estimateComplexity: roughly estimates and prints the search space size (number of path alternatives) on a log scale, based on input gene data source
+   
+*)
 
 module GeneUtils =
     // Counts how many genes are "used" (true in the model) and prints them 
@@ -477,6 +528,10 @@ module GeneUtils =
 
 open GeneUtils
 
+(*
+GraphUtils: 
+
+*)
 module GraphUtils = 
     let makeGraphInternal (gI:GraphInput) =
         let radius = 15.
