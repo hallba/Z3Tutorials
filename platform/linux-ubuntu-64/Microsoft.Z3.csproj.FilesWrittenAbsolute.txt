@@ -1,5 +1,0 @@
-/home/samin/z3/src/api/dotnet/obj/Debug/.NETFramework,Version=v4.0,Profile=Client.AssemblyAttribute.cs
-/home/cwinter/bugs/z3bugs/Debug/Microsoft.Z3.dll.mdb
-/home/cwinter/bugs/z3bugs/Debug/Microsoft.Z3.dll
-/home/samin/z3/src/api/dotnet/obj/Debug/Microsoft.Z3.dll
-/home/samin/z3/src/api/dotnet/obj/Debug/Microsoft.Z3.dll.mdb

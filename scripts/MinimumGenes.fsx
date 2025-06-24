@@ -1,5 +1,28 @@
-(*
-Three gene pairs, UV, WX,YZ
+#r "nuget: FSharp.Data"
+#r "platform/z3/bin/Microsoft.Z3.dll"
+#r "packages/Microsoft.Msagl.dll"
+#r "System.IO.Compression.FileSystem.dll"
+
+#load "getZ3.fsx"
+
+open FSharp.Data
+open System
+open System.IO
+open System.IO.Compression
+open System.Collections.Generic
+open System.Diagnostics
+open Microsoft.Z3 
+open Microsoft.Msagl.Core.Geometry
+open Microsoft.Msagl.Core.Geometry.Curves
+open Microsoft.Msagl.Core.Layout
+open Microsoft.Msagl.Core.Routing
+open Microsoft.Msagl.Layout.Layered //For sugiyama
+open Microsoft.Msagl.Layout.MDS
+open Microsoft.Msagl.Layout.Incremental
+open Microsoft.Msagl.Prototype.Ranking
+open Microsoft.Msagl.Miscellaneous
+
+(* Three gene pairs, UV, WX,YZ
 Each has the following shortest paths
 
 U A B C V
@@ -12,34 +35,8 @@ Y D Z
 Y E Z
 
 Want to find the smallest number of genes that link the original set
- U V W X Y Z
+ U V W X Y Z *)
 
- *)
-
-open System
-open System.IO
-open System.IO.Compression
-open System.Collections.Generic
-open System.Diagnostics
-
-#r "System.IO.Compression.FileSystem.dll"
-#load "getZ3.fsx"
-
-#r "../platform/z3/bin/Microsoft.Z3.dll"
-#r "../packages/Microsoft.Msagl/lib/net40/Microsoft.Msagl.dll"
-open Microsoft.Z3 
-open Microsoft.Msagl.Core.Geometry
-open Microsoft.Msagl.Core.Geometry.Curves
-open Microsoft.Msagl.Core.Layout
-open Microsoft.Msagl.Core.Routing
-open Microsoft.Msagl.Layout.Layered //For sugiyama
-open Microsoft.Msagl.Layout.MDS
-open Microsoft.Msagl.Layout.Incremental
-open Microsoft.Msagl.Prototype.Ranking
-open Microsoft.Msagl.Miscellaneous
-
-#r "../packages/FSharp.Data/lib/net45/FSharp.Data.dll"
-open FSharp.Data
 (*
     These are URLs of Omnipath databases that have the same structure as the working example
     KinaseExtra (enzyme-substrate interactions)
@@ -54,11 +51,14 @@ open FSharp.Data
     Complexes
     http://omnipathdb.org/complexes?&fields=sources,references
 *)
-let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references"
-type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1", 
-                                    Schema="Is_directed=bool,Consensus_inhibition=bool,Consensus_stimulation=bool">
 
-type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sources,references">
+// Data Access: Fetches interaction data from OmniPath DB (PPIs, regulatory, PTM, miRNA interactions)
+
+let interactionURL = "http://omnipathdb.org/interactions?fields=sources&fields=references" // Defines the base URL for downloading interaction data with source and reference fields
+type OmniPath = FSharp.Data.CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1", 
+                                    Schema="Is_directed=bool,Consensus_inhibition=bool,Consensus_stimulation=bool"> // creates a type provider for the CSV data returned by OmniPath's interaction API
+
+type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sources,references"> //Creates another type provider for complexes data from OmniPath
 
 //let omni = OmniPath.Load(interactionURL+"&genesymbols=1")
 //let data = omni.Rows |> Seq.filter (fun x -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation))
@@ -66,7 +66,17 @@ type OmniPathComplex = CsvProvider<"http://omnipathdb.org/complexes?&fields=sour
 //let omniComplex = OmniPathComplex.Load("http://omnipathdb.org/complexes?&fields=sources,references")
 //let complexData = omniComplex.Rows
 
-type OmniSource = PPI | Regulon | PTM | MiRNA | Pathways | Combo
+type OmniSource = PPI | Regulon | PTM | MiRNA | Pathways | Combo // defines a custom type that can be one of several named options 
+
+(*
+getOmniData: Defines a function that takes 2 inputs: 
+1. t        - the type of data to retrieve (from the options in OmniSource)
+2. strict   - a Boolean flag indicating whether to strictly filter for biologically significant interactions
+
+Biological significance is determined using 2 criteria: 
+- The interaction must be directional (i.e., one molecule acts on another, A -> B), which implies a cause-and-effect relationship
+- The interaction must be supported as either inhibitory or stimulatory, based on a concensus from multiple data sources
+*)
 
 let getOmniData t strict =  let source = match t with 
                                             | PPI -> "http://omnipathdb.org/interactions?fields=sources&fields=references&genesymbols=1"
@@ -78,12 +88,45 @@ let getOmniData t strict =  let source = match t with
                             let data = OmniPath.Load(source)
                             let filter = if strict then (fun (x: OmniPath.Row) -> x.Is_directed && (x.Consensus_inhibition || x.Consensus_stimulation)) else (fun x -> true)
                             data.Rows |> Seq.filter filter
+(*
+sendToClipboard 
+
+Defines a cross-platform support for sending text to the system clipboard, depending on which operating system (OS) the user is running
+
+1. A custom type 'OS' is defined using a discriminated union: 
+- OSX for macOS 
+- Windows for Microsoft Windows 
+- Linux for Linux-based systems 
+
+2. 
+getOS: checks the system platform using Environment.OSVersion.Platform and returns the corresponding system. 
+4, 128, and 6 are internal platform codes: 
+- 4, 128 checks for macOS-specific file to distinguish between macOS and Linux 
+- 6 is macOS 
+- everything else is defaulted to Windows 
+
+3. 
+macCopy: copies a string s to the macOS clipboard using pbcopy command.
+    - let p = new Process() Creates and assigns a new ProcessStartInfo object to the process p
+    - p.StartInfo <- new ProcessStartInfo("pbcopy", "-pboard general -Prefer txt") Tells the process to run the command pbcopy with the arguments which specificy the clipboard type (general) and the preferred format (text)
+    - p.StartInfo.UseShellExecute <- false Tells the process not to use the operating system shell to start the process, allowing redireacting of input/output streams 
+    - p.StartInfo.RedirectStandardOutput <- false Do not redirect the output stream of the process (go to the normal console or be ignored)
+    - p.StartInfo.RedirectStandardInput <- true Enable redirecting the input stream, so that the what is written to string can be written into pbcopy's input 
+    - p.Start() starts the process running pbcopy with the previous settings
+    - p.StandardInput.Write(s) sends the text that needs to be copied to the clipboard 
+    - p.StandardInput.Close() closes the input stream, letting pbcopy know that it can finish its task 
+    - p.WaitforExit() ensure that the clipboard copy completes before the program moves on
+
+4. winCopy: copies a string s to the Windows clipboard using the clip command. 
+    - File.WriteAllText ("tmp.json", s) Writes the string s to a temporary file named "tmp.json" in the current directory 
+    - p.StartInfo <- new ProcessStartInfo("CMD.exe", "/C clip < tmp.json") Configures the process to run the Windows command-line interpreter CMD.exe
+
+*)
 
 type OS =
         | OSX        
         | Windows
         | Linux
-
 
 let getOS = 
         match (int Environment.OSVersion.Platform) with
@@ -116,6 +159,20 @@ let sendToClipboard s =
     | OSX -> macCopy s
     | Linux -> ()
 
+(*
+
+type PartialPath: defines a recusive type representing a node in a path, each with an optional parent node and a name 
+ToArray member recursively builds the full path from this node to the root by walking up parent. Collects the names
+in reverse, then converts the list to an array
+
+type Vertex: defines a vertex node with sname (gene name), vertexId (unique integer ID), edges (list of edges)
+
+type InteractionType: defines a discriminant type with options being Activator or Inhibitor
+
+type InteractionInput: represents an interaction from the source to target with metadata: description (textual info), 
+kind (type, activator / inhibitor), link (identifier string)
+
+*)
 type PartialPath = 
     {
         parent : PartialPath option
@@ -151,6 +208,15 @@ type InteractionInput = {
     link: string
 }
 
+(*
+edgesToVertex: 
+    - Take a sequence of edges. 
+    - Group the edges by their Source_genesymbol into a dictionary mapping source gene name -> list of edges
+    - Creates an array of vertex structs for each source gene
+    - Builds a lookup dictionary from gene name to its index in the vertex array
+    - Returns both the lookup dictionary and the vertex array 
+*)
+
 let edgesToVertex data =
     let vertices = new Dictionary<string,OmniPath.Row list>()
     let dataArray = data |> Array.ofSeq
@@ -164,6 +230,32 @@ let edgesToVertex data =
     let lookUp = new Dictionary<string,int>()
     Array.iteri (fun i name -> lookUp.Add(name,i)) vertexNames
     lookUp, verticesArr
+
+
+(*
+shortestPathLength: 
+    calls edgesToVertex data which groups edges by their source node name 
+    returns: 
+        1. lookUp: a dictionary mapping node names to vertex indices
+        2. vertices: an array of Vertex objects, where each vertex has edges going out from it
+
+    getNextNodes: from a given source node, find all next reachable nodes that have not been visited yet
+        1. Looks up the index of the source node in lookUp
+        2. If found (true, n) accesses the vertex in vertices.[n]
+        3. Maps over all edges of that vertex to extract the Target_genesymbol (the node it points to)
+        4. Filters out any nodes that are already in the visited array 
+        5. Converts the filtered list to an array 
+
+    rec core: core Breadth-First Search (BFS) loop implemented recursively
+        - queue (current nodes to explore, contained in an array of strings), visited (all the nodes visited so far, contained
+        in an array of strings, length (current distance from the source node in number of edges traversed, as an int))
+        - starting values: queue contains only the source node, visited: empty (no nodes visited yet), initial path length: 1 (source itself counts as a starting step)
+        1. Expanding the breadth: For every node in the current queue, call getNextNodes visited to get their neighbours not yet visited. 
+        Array.collects flattens the list of neighbour arrays into a single array queue'
+        2. Check if target is found: if the target node is among the neighbours found in this step, return Some(length) as the shortest path length.
+        3. Check for a dead-end: if no new nodes are found to explore (queue' is empty) return none
+        4. Add the newly found nodes to the visited list and recursively call core with the new queue', the updated visited nodes and the incremented path length 
+*)
 
 let shortestPathLength source target data = 
     let lookUp, vertices = edgesToVertex data
@@ -190,6 +282,10 @@ let shortestPathLength source target data =
             core queue' visited' (length+1)
     core [|source|] [||] 1
     
+(*
+allShortestPaths: 
+buildEdgeDictionary: 
+*)
 
 let allShortestPaths source target data =
     let lookUp, vertices = edgesToVertex data
@@ -257,7 +353,6 @@ let buildEdgeDictionary paths data maximal =
     else 
         Array.iter (Array.iter (getEdges lookUp vertices edgeDescriptions)) paths
     edgeDescriptions
-
 
 let pairwisePathSearch data genes includeSelfLoops=
     Array.collect (fun geneI -> Array.map (fun geneJ -> if includeSelfLoops || geneI <> geneJ then allShortestPaths geneI geneJ data else [||]) genes ) genes
@@ -672,7 +767,24 @@ let getPathsFromSource source data search selfLoops =
         | FromFile(name) -> let arr = [| for line in File.ReadLines(name) do 
                                             yield line |]
                             search data arr selfLoops
+(*
+main input: Defines a function main with argument input
+    search: choose a search function based on the input. hubGene is an optional gene that acts 
+    as a "hub" in the path search. oneDirection is a boolean controlling if search is one-directional.
+    db: getOmniData loads the interaction data from the specified database with an optional strict filter. If exclusions
+    are provided, filter out any rows where either the source or the target genes are in exclusions.
+    paths: find all paths between source genes from input.genesSource using the selected search function, includeSelfLoops 
+    controls whether self-interactions are allowed.
+    interactions: if the gene source is a demo, don't build interactions. Otherwise, build a dictionary of edges from the found 
+    paths and data.
+    check if any paths are found and estimate the computational complexity of the paths. 
+    ctx, genes, pairs: create a Z3 SMT solver context and variables
+    s: create optimisation solver instance. varnames, vars: create variables representing whether a gene/path is used, and 
+    separate out variable names and solver constraints. Array.map??
+    geneNumber: define an integer GeneCount. boolToNumber: convert each gene's used boolean variable into 1 or 0, and sum to get the total 
+    number of genes used and use this and the variables as constraints. Set solver to minimise geneNumber.
 
+*)
 let main input =
     let search =    match input.hubGene,input.oneDirection with 
                     | None,true -> OneDirectionalPathSearch
@@ -854,3 +966,5 @@ let crossTalk input =
 
 fsi.ShowDeclarationValues <- false
 
+let mouseGenesMonika = [| "Agps"; "Coro7"; "Epdr1"; "Fth1"; "Ftl1"; "Mocs3"; "Rap2b"; "Serpina1a"; "Sh3bp1"; "Slc14a1"; "Tgm2"; "Upp1" |]
+let mouse: obj = main { defaultInput with genesSource = FromArray(mouseGenesMonika); database = Combo; source = Mouse}

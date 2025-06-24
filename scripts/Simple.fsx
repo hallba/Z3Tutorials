@@ -1,6 +1,6 @@
 #load "getZ3.fsx"
 
-#r "../platform/z3/bin/Microsoft.Z3.dll"
+#r "platform/z3/bin/Microsoft.Z3.dll"
 open Microsoft.Z3 
 
 let sanity_check (ctx:Context) (s:Solver) (v:IntExpr []) =
@@ -74,3 +74,5 @@ let main () =
     printf "%s" (paradox ctx s [|A;B|])
     //A is less than B- What is the answer?
     printf "%s" (answer ctx s [|A;B|])
+
+main()

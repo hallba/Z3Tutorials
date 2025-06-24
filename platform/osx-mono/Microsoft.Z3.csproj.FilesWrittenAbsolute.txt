@@ -1,5 +1,0 @@
-/Users/MSRC-MacBookAir/compose-z3-tutorial/z3-cee7dd39444c9060186df79c2a2c7f8845de415b/src/api/dotnet/obj/Debug/.NETFramework,Version=v4.0,Profile=Client.AssemblyAttribute.cs
-/Users/MSRC-MacBookAir/cwinter/bugs/z3bugs/Debug/Microsoft.Z3.dll.mdb
-/Users/MSRC-MacBookAir/cwinter/bugs/z3bugs/Debug/Microsoft.Z3.dll
-/Users/MSRC-MacBookAir/compose-z3-tutorial/z3-cee7dd39444c9060186df79c2a2c7f8845de415b/src/api/dotnet/obj/Debug/Microsoft.Z3.dll
-/Users/MSRC-MacBookAir/compose-z3-tutorial/z3-cee7dd39444c9060186df79c2a2c7f8845de415b/src/api/dotnet/obj/Debug/Microsoft.Z3.dll.mdb
