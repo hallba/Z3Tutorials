@@ -529,7 +529,7 @@ module GeneUtils =
 open GeneUtils
 
 (*
-GraphUtils: 
+GraphUtils: handles creating and visualising the graph from Z3 model results using MSAGL library
 
 *)
 module GraphUtils = 
@@ -744,6 +744,13 @@ module GraphUtils =
 
 open GraphUtils
 
+(*
+PathSearch: Retrieves paths for different gene sets and data soures 
+    - getPathsFromSource: returns sets of paths 
+        From Demo source: returns 3 predefined path groups corresponding to example genes and their paths
+        From FromArray / FromFile sources: reads the gene sets and calls the provided search function with the data
+
+*)
 module PathSearch =
     let getPathsFromSource source data search selfLoops = 
         match source with
@@ -768,6 +775,34 @@ module PathSearch =
                             search data arr selfLoops
 open PathSearch
 
+(*
+MainSolver: overall logic for setting up, running and analysing the gene pathway optimisation problems using 
+the Z3 SMT solve, supporting both single gene set analysis and crosstalk analysis between 2 gene sets. 
+    
+    defaultInput: defines default parameters for a typical run
+    main: 
+        1. choose the search method 
+        2. calls getOmniData to retrieve interaction data from specified database, with strict filtering 
+        and source species, also applying exclusions if they are provided
+        3. getting the paths: retrieve possible gene paths from the gene source and filtered data. 
+        4. handle no paths found by returning None
+        5. estimate complexity 
+        6. set up a Z3 context and variables: creates an SMT optimisation solver and creates a Z3 context
+        7. create Z3 variables and constraints for each path. Determine if a gene is used, and add gene usage constraints to the solver.
+        8. count how many genes are used and add this constraint, setting the optimisation goal to minimise this number 
+        9. solve and return the graph data if satisfiable, otherwise, return none / throw an error
+    defaultCrossTalkInput: defines default parameters for cross-talk analysis between 2 gene sets and encourage more connectivity
+    crossTalk: 
+        1, 2. similar to defaultInput
+        3. getting the paths for both gene sets
+        4. checks if there are any overlapping genes between the 2 gene sets: 
+            if yes: 
+                - combine gene sets and paths and build an interaction dictionary -> 6.7 in main 
+                - adds a constaint enforcing that at least one of the overlapping genes must be used 
+                - 8, 9. in main 
+            if no: 
+                - finds the shortest path length between any gene in the first set to any gene in the second set
+*)
 module MainSolver = 
     let defaultInput = 
         {
@@ -960,4 +995,74 @@ fsi.ShowDeclarationValues <- false
 
 
 let mouseGenesMonika = [| "Agps";"Coro7";"Epdr1";"Fth1";"Ftl1";"Mocs3";"Rap2b";"Serpina1a";"Sh3bp1";"Slc14a1";"Tgm2";"Upp1"|]
-let mouse: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database=Combo;source=Mouse}
+(* let mouse: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database = Combo;source = Mouse} *)
+
+// Define the config you want to test (you can change any fields here)
+let myConfig =
+    { defaultInput with
+        includeSelfLoops = true
+        oneDirection = false
+        maximiseEdges = false
+        strictFilter = true
+        database = Combo
+        source = Mouse
+        genesSource = FromArray mouseGenesMonika
+    }
+
+// Run the solver with your config
+let result = main myConfig
+
+// Output info
+match result with
+| Some(_) -> printfn "Graph generated and copied to clipboard for this config."
+| None -> printfn "No graph could be generated for this config."
+
+let config1 = { myConfig with database = PPI }
+let config2 = { myConfig with oneDirection = true }
+let config3 = { myConfig with includeSelfLoops = false }
+
+let res1 = main config1 |> ignore
+let res2 = main config2 |> ignore
+let res3 =main config3 |> ignore
+
+res1
+
+(*
+Tests all possible combinations of parameters using a fixed set of genes, and for each 
+valid configuration that produces a graph, it generates the minimal gene interaction graph using the 
+main solver and sends the result to the clipboard
+*)
+let allOptions =
+    [
+        for selfLoops in [true; false] do
+        for oneDir in [true; false] do
+        for maxEdges in [true; false] do
+        for strictFilter in [true; false] do
+        for db in [PPI; Regulon; PTM; MiRNA; Pathways; Combo] do
+        for source in [Human; Mouse; Rat] do
+            yield {
+                defaultInput with
+                    includeSelfLoops = selfLoops
+                    oneDirection = oneDir
+                    maximiseEdges = maxEdges
+                    strictFilter = strictFilter
+                    database = db
+                    source = source
+            }
+    ]
+
+// defines a function called runAllWithGenes that takes a parameter genes 
+let runAllWithGenes genes = 
+    // start a loop over every configuration in allOptions list, containing every combination of parameters 
+    for config in allOptions do 
+        // creates a new config record by copying config but overriding the genesSource field with specific gene list wrapped in FromArray. 
+        let configWithGenes = {config with genesSource = FromArray(genes)}
+
+        // call main solver function, passing the config with the gene list 
+        match main configWithGenes with 
+
+        // None if no solution exists
+        | None -> printfn "No graph found for config: %A" configWithGenes
+        | Some(_) -> printfn "Graph generated and sent to clipboard for config: %A" configWithGenes
+
+//runAllWithGenes mouseGenesMonika
