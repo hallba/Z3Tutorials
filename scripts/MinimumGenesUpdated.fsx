@@ -678,8 +678,8 @@ module GraphUtils =
         let varLayout = Array.map (bmaVariableLayout gI.rotation) bmaVariables |> fun x -> String.Join(",",x) 
 
         let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
-        sendToClipboard result
-        printf "%s" result 
+        result
+
     let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input used=
         let (gI:GraphInput) = {
             ctx = ctx
@@ -991,41 +991,22 @@ module MainSolver =
 
 open MainSolver
 
-fsi.ShowDeclarationValues <- false
-
-
 let mouseGenesMonika = [| "Agps";"Coro7";"Epdr1";"Fth1";"Ftl1";"Mocs3";"Rap2b";"Serpina1a";"Sh3bp1";"Slc14a1";"Tgm2";"Upp1"|]
-(* let mouse: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database = Combo;source = Mouse} *)
+//let mouse1: obj = main {defaultInput with genesSource=FromArray mouseGenesMonika;database=Combo;source=Mouse}
+let mouse2: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database=PPI;source=Mouse}
+//let mouse3: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database=Regulon;source=Mouse}
 
-// Define the config you want to test (you can change any fields here)
-let myConfig =
-    { defaultInput with
-        includeSelfLoops = true
-        oneDirection = false
-        maximiseEdges = false
-        strictFilter = true
-        database = Combo
-        source = Mouse
-        genesSource = FromArray mouseGenesMonika
-    }
-
-// Run the solver with your config
-let result = main myConfig
-
-// Output info
-match result with
-| Some(_) -> printfn "Graph generated and copied to clipboard for this config."
-| None -> printfn "No graph could be generated for this config."
-
-let config1 = { myConfig with database = PPI }
-let config2 = { myConfig with oneDirection = true }
-let config3 = { myConfig with includeSelfLoops = false }
+(*// Define different configurations that override initial config
+let config1 = { defaultInput with genesSource=FromArray mouseGenesMonika;database = PPI }
+let config2 = { defaultInput with genesSource=FromArray mouseGenesMonika;oneDirection = false }
+let config3 = { defaultInput with genesSource=FromArray mouseGenesMonika;includeSelfLoops = true }
 
 let res1 = main config1 |> ignore
 let res2 = main config2 |> ignore
 let res3 =main config3 |> ignore
 
 res1
+*)
 
 (*
 Tests all possible combinations of parameters using a fixed set of genes, and for each 
@@ -1065,4 +1046,57 @@ let runAllWithGenes genes =
         | None -> printfn "No graph found for config: %A" configWithGenes
         | Some(_) -> printfn "Graph generated and sent to clipboard for config: %A" configWithGenes
 
-//runAllWithGenes mouseGenesMonika
+runAllWithGenes mouseGenesMonika
+
+fsi.ShowDeclarationValues <- false 
+
+(* modified runAllWithGenes with additional step to collect all graphs into a list and allow user to select graph by index, 
+then send the selected graph string to the clipboard*)
+// Main interactive runner function
+let runAllWithGenesInteractive (genes: string[]) =
+    // Mutable list to store all generated graph strings
+    let allGraphs = new System.Collections.Generic.List<string>()
+
+    // Iterate over each configuration with index
+    for i, config in allOptions |> List.mapi (fun i c -> (i, c)) do
+        // Override genesSource field with provided genes array
+        let configWithGenes = { config with genesSource = FromArray(genes) }
+        
+        printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
+
+        // Run the solver (your 'main' function) on the config
+        match main configWithGenes with
+        | None -> printfn "No graph found for this configuration."
+        | Some graphInput ->
+            // Convert GraphInput to string (BMA or JSON) using your function
+            let graphStr = makeGraphInternal graphInput
+            printfn "Graph generated for config %d" (i + 1)
+            allGraphs.Add(graphStr)
+
+
+    // Convert to immutable list
+    let graphs = allGraphs |> Seq.toList
+
+    if graphs.Length = 0 then
+        printfn "No graphs generated."
+    else
+        // Display all graphs with index and preview (first 100 chars)
+        printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
+        graphs |> List.iteri (fun i g -> 
+            let preview = if g.Length > 100 then g.Substring(0, 100) + "..." else g
+            printfn "[%d]: %s" i preview)
+
+        // Prompt user input
+        printf "Enter index of graph to copy to clipboard: "
+        let input = Console.ReadLine()
+
+        // Parse input and send selected graph to clipboard
+        match Int32.TryParse(input) with
+        | (true, idx) when idx >= 0 && idx < graphs.Length ->
+            let selectedGraph = graphs.[idx]
+            sendToClipboard selectedGraph
+            printfn "Graph %d copied to clipboard." idx
+        | _ ->
+            printfn "Invalid selection, no graph copied."
+
+runAllWithGenesInteractive mouseGenesMonika

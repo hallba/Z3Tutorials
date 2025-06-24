@@ -1,7 +1,9 @@
+#r "nuget: FSharp.Data"
+#r "platform/z3/bin/Microsoft.Z3.dll"
+#r "packages/Microsoft.Msagl.dll"
+#r "System.IO.Compression.FileSystem.dll"
+
 #load "getZ3.fsx"
-
-#r "../platform/z3/bin/Microsoft.Z3.dll"
-
 open Microsoft.Z3 
 
 let main () = 
