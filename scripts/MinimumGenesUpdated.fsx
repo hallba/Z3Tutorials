@@ -1033,7 +1033,7 @@ let allOptions =
     ]
 
 // defines a function called runAllWithGenes that takes a parameter genes 
-let runAllWithGenes genes = 
+(* let runAllWithGenes genes = 
     // start a loop over every configuration in allOptions list, containing every combination of parameters 
     for config in allOptions do 
         // creates a new config record by copying config but overriding the genesSource field with specific gene list wrapped in FromArray. 
@@ -1046,7 +1046,7 @@ let runAllWithGenes genes =
         | None -> printfn "No graph found for config: %A" configWithGenes
         | Some(_) -> printfn "Graph generated and sent to clipboard for config: %A" configWithGenes
 
-runAllWithGenes mouseGenesMonika
+runAllWithGenes mouseGenesMonika *)
 
 fsi.ShowDeclarationValues <- false 
 
@@ -1098,5 +1098,6 @@ let runAllWithGenesInteractive (genes: string[]) =
             printfn "Graph %d copied to clipboard." idx
         | _ ->
             printfn "Invalid selection, no graph copied."
+    graphs
 
 runAllWithGenesInteractive mouseGenesMonika
