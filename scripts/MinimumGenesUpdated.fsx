@@ -1014,10 +1014,9 @@ module GeneGraph =
                 }
         ]
     
-    (* modified initial function with additional step to collect all graphs into a list and allow user to select graph by index, 
-    then send the selected graph string to the clipboard*)
+    (* modified initial function with additional step to collect all graphs into a list*)
 
-    // Main interactive runner function
+    // Main runner function
     let runAllWithGenesInteractive (genes: string[]) =
         // Mutable list to store all generated graph strings
         let allGraphs = new System.Collections.Generic.List<string>()
@@ -1050,23 +1049,10 @@ module GeneGraph =
             graphs |> List.iteri (fun i g -> 
                 let preview = if g.Length > 100 then g.Substring(0, 100) + "..." else g
                 printfn "[%d]: %s" i preview)
-
-            // Prompt user input
-            printf "Enter index of graph to copy to clipboard: "
-            let input = Console.ReadLine()
-
-            // Parse input and send selected graph to clipboard
-            match Int32.TryParse(input) with
-            | (true, idx) when idx >= 0 && idx < graphs.Length ->
-                let selectedGraph = graphs.[idx]
-                sendToClipboard selectedGraph
-                printfn "Graph %d copied to clipboard." idx
-            | _ ->
-                printfn "Invalid selection, no graph copied."
         graphs
 
 open GeneGraph
 
-runAllWithGenesInteractive mouseGenesMonika
+let list = runAllWithGenesInteractive mouseGenesMonika
 
 fsi.ShowDeclarationValues <- false 
