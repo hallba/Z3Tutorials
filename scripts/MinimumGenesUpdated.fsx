@@ -991,113 +991,82 @@ module MainSolver =
 
 open MainSolver
 
-let mouseGenesMonika = [| "Agps";"Coro7";"Epdr1";"Fth1";"Ftl1";"Mocs3";"Rap2b";"Serpina1a";"Sh3bp1";"Slc14a1";"Tgm2";"Upp1"|]
-//let mouse1: obj = main {defaultInput with genesSource=FromArray mouseGenesMonika;database=Combo;source=Mouse}
-let mouse2: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database=PPI;source=Mouse}
-//let mouse3: obj = main {defaultInput with genesSource=FromArray(mouseGenesMonika);database=Regulon;source=Mouse}
+module GeneGraph =
+    let mouseGenesMonika = [| "Agps";"Coro7";"Epdr1";"Fth1";"Ftl1";"Mocs3";"Rap2b";"Serpina1a";"Sh3bp1";"Slc14a1";"Tgm2";"Upp1"|]
 
-(*// Define different configurations that override initial config
-let config1 = { defaultInput with genesSource=FromArray mouseGenesMonika;database = PPI }
-let config2 = { defaultInput with genesSource=FromArray mouseGenesMonika;oneDirection = false }
-let config3 = { defaultInput with genesSource=FromArray mouseGenesMonika;includeSelfLoops = true }
+    // All combinations of input settings (288 in total)
+    let allOptions =
+        [
+            for selfLoops in [true; false] do
+            for oneDir in [true; false] do
+            for maxEdges in [true; false] do
+            for strictFilter in [true; false] do
+            for db in [PPI; Regulon; PTM; MiRNA; Pathways; Combo] do
+            for source in [Human; Mouse; Rat] do
+                yield {
+                    defaultInput with
+                        includeSelfLoops = selfLoops
+                        oneDirection = oneDir
+                        maximiseEdges = maxEdges
+                        strictFilter = strictFilter
+                        database = db
+                        source = source
+                }
+        ]
+    
+    (* modified initial function with additional step to collect all graphs into a list and allow user to select graph by index, 
+    then send the selected graph string to the clipboard*)
 
-let res1 = main config1 |> ignore
-let res2 = main config2 |> ignore
-let res3 =main config3 |> ignore
+    // Main interactive runner function
+    let runAllWithGenesInteractive (genes: string[]) =
+        // Mutable list to store all generated graph strings
+        let allGraphs = new System.Collections.Generic.List<string>()
 
-res1
-*)
+        // Iterate over each configuration with index
+        for i, config in allOptions |> List.mapi (fun i c -> (i, c)) do
+            // Override genesSource field with provided genes array
+            let configWithGenes = { config with genesSource = FromArray(genes) }
+            
+            printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
 
-(*
-Tests all possible combinations of parameters using a fixed set of genes, and for each 
-valid configuration that produces a graph, it generates the minimal gene interaction graph using the 
-main solver and sends the result to the clipboard
-*)
-let allOptions =
-    [
-        for selfLoops in [true; false] do
-        for oneDir in [true; false] do
-        for maxEdges in [true; false] do
-        for strictFilter in [true; false] do
-        for db in [PPI; Regulon; PTM; MiRNA; Pathways; Combo] do
-        for source in [Human; Mouse; Rat] do
-            yield {
-                defaultInput with
-                    includeSelfLoops = selfLoops
-                    oneDirection = oneDir
-                    maximiseEdges = maxEdges
-                    strictFilter = strictFilter
-                    database = db
-                    source = source
-            }
-    ]
-
-// defines a function called runAllWithGenes that takes a parameter genes 
-(* let runAllWithGenes genes = 
-    // start a loop over every configuration in allOptions list, containing every combination of parameters 
-    for config in allOptions do 
-        // creates a new config record by copying config but overriding the genesSource field with specific gene list wrapped in FromArray. 
-        let configWithGenes = {config with genesSource = FromArray(genes)}
-
-        // call main solver function, passing the config with the gene list 
-        match main configWithGenes with 
-
-        // None if no solution exists
-        | None -> printfn "No graph found for config: %A" configWithGenes
-        | Some(_) -> printfn "Graph generated and sent to clipboard for config: %A" configWithGenes
-
-runAllWithGenes mouseGenesMonika *)
-
-fsi.ShowDeclarationValues <- false 
-
-(* modified runAllWithGenes with additional step to collect all graphs into a list and allow user to select graph by index, 
-then send the selected graph string to the clipboard*)
-// Main interactive runner function
-let runAllWithGenesInteractive (genes: string[]) =
-    // Mutable list to store all generated graph strings
-    let allGraphs = new System.Collections.Generic.List<string>()
-
-    // Iterate over each configuration with index
-    for i, config in allOptions |> List.mapi (fun i c -> (i, c)) do
-        // Override genesSource field with provided genes array
-        let configWithGenes = { config with genesSource = FromArray(genes) }
-        
-        printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
-
-        // Run the solver (your 'main' function) on the config
-        match main configWithGenes with
-        | None -> printfn "No graph found for this configuration."
-        | Some graphInput ->
-            // Convert GraphInput to string (BMA or JSON) using your function
-            let graphStr = makeGraphInternal graphInput
-            printfn "Graph generated for config %d" (i + 1)
-            allGraphs.Add(graphStr)
+            // Run the solver (your 'main' function) on the config
+            match main configWithGenes with
+            | None -> printfn "No graph found for this configuration."
+            | Some graphInput ->
+                // Convert GraphInput to string (BMA or JSON) using your function
+                let graphStr = makeGraphInternal graphInput
+                printfn "Graph generated for config %d" (i + 1)
+                allGraphs.Add(graphStr)
 
 
-    // Convert to immutable list
-    let graphs = allGraphs |> Seq.toList
+        // Convert to immutable list
+        let graphs = allGraphs |> Seq.toList
 
-    if graphs.Length = 0 then
-        printfn "No graphs generated."
-    else
-        // Display all graphs with index and preview (first 100 chars)
-        printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
-        graphs |> List.iteri (fun i g -> 
-            let preview = if g.Length > 100 then g.Substring(0, 100) + "..." else g
-            printfn "[%d]: %s" i preview)
+        if graphs.Length = 0 then
+            printfn "No graphs generated."
+        else
+            // Display all graphs with index and preview (first 100 chars)
+            printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
+            graphs |> List.iteri (fun i g -> 
+                let preview = if g.Length > 100 then g.Substring(0, 100) + "..." else g
+                printfn "[%d]: %s" i preview)
 
-        // Prompt user input
-        printf "Enter index of graph to copy to clipboard: "
-        let input = Console.ReadLine()
+            // Prompt user input
+            printf "Enter index of graph to copy to clipboard: "
+            let input = Console.ReadLine()
 
-        // Parse input and send selected graph to clipboard
-        match Int32.TryParse(input) with
-        | (true, idx) when idx >= 0 && idx < graphs.Length ->
-            let selectedGraph = graphs.[idx]
-            sendToClipboard selectedGraph
-            printfn "Graph %d copied to clipboard." idx
-        | _ ->
-            printfn "Invalid selection, no graph copied."
-    graphs
+            // Parse input and send selected graph to clipboard
+            match Int32.TryParse(input) with
+            | (true, idx) when idx >= 0 && idx < graphs.Length ->
+                let selectedGraph = graphs.[idx]
+                sendToClipboard selectedGraph
+                printfn "Graph %d copied to clipboard." idx
+            | _ ->
+                printfn "Invalid selection, no graph copied."
+        graphs
+
+open GeneGraph
 
 runAllWithGenesInteractive mouseGenesMonika
+
+fsi.ShowDeclarationValues <- false 
