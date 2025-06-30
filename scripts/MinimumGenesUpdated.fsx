@@ -363,7 +363,19 @@ module GeneTypes =
     type DataSource = FileName of string | Data of string [] [] []
 
     type GeneData =  Demo | FromArray of string [] | FromFile of string
-    
+
+    type MainInput = {
+        genesSource : GeneData
+        includeSelfLoops : Boolean
+        oneDirection : Boolean
+        maximiseEdges : Boolean
+        exclusions : string [] option
+        database : OmniSource
+        strictFilter : bool
+        hubGene : string option //all genes should be downstream of this if defined
+        source: Organism
+    }
+
     type GraphInput = {
         ctx : Context
         m : Model
@@ -377,19 +389,8 @@ module GeneTypes =
         s : Optimize
         rotation: float
         numberGenesUsed: int
+        Config: MainInput
     } 
-
-    type MainInput = {
-        genesSource : GeneData
-        includeSelfLoops : Boolean
-        oneDirection : Boolean
-        maximiseEdges : Boolean
-        exclusions : string [] option
-        database : OmniSource
-        strictFilter : bool
-        hubGene : string option //all genes should be downstream of this if defined
-        source: Organism
-    }
 
     type CrossTalkInput = {
         genesSource1 : GeneData
@@ -409,7 +410,9 @@ module GeneTypes =
             GeneCount: int 
             InputGeneCoverage: int 
             EdgeCount: int
+            Config: MainInput
         }
+
 
 open GeneTypes
 
@@ -689,7 +692,7 @@ module GraphUtils =
         let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
         result
 
-    let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input used=
+    let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input used config=
         let (gI:GraphInput) = {
             ctx = ctx
             m = m
@@ -703,6 +706,7 @@ module GraphUtils =
             rotation = 0.
             inputGenes = input
             numberGenesUsed = used
+            Config = config
         }
         // Count number of genes
         let geneCount = genes.Length
@@ -723,6 +727,7 @@ module GraphUtils =
             GeneCount = geneCount 
             InputGeneCoverage = inputGeneCoverage
             EdgeCount = edgeCount
+            Config = config
         }
 
     let graphInputNext (this: GraphInput) =
@@ -735,7 +740,7 @@ module GraphUtils =
             printf "sat\n"
             printGenes this.ctx this.s.Model this.genes
             let used = countUsedGenes this.ctx this.genes this.s.Model
-            let result = makeGraph this.ctx this.s.Model this.s this.zGenes this.paths this.genes this.layout this.interactionInfo this.maxEdges this.inputGenes used
+            let result = makeGraph this.ctx this.s.Model this.s this.zGenes this.paths this.genes this.layout this.interactionInfo this.maxEdges this.inputGenes used this.Config
             Some({ this with m = this.s.Model; s = this.s; numberGenesUsed = used })
         | Status.UNSATISFIABLE -> 
             printf "unsat"
@@ -831,6 +836,7 @@ the Z3 SMT solve, supporting both single gene set analysis and crosstalk analysi
                 - finds the shortest path length between any gene in the first set to any gene in the second set
 *)
 module MainSolver = 
+
     let defaultInput = 
         {
             genesSource = Demo
@@ -843,6 +849,7 @@ module MainSolver =
             hubGene = None
             source = Human
         }
+    
 
     let main input =
         let search =    match input.hubGene,input.oneDirection with 
@@ -1040,7 +1047,7 @@ module GeneGraph =
                         source = source
                 }
         ]
-    
+
     (* modified initial function with additional step to collect all graphs into a list*)
 
     // Main runner function
@@ -1096,11 +1103,27 @@ let readCustomBinary (filename: string) : string list =
     let count = br.ReadInt32()
     [ for _ in 1 .. count -> br.ReadString()]
 
+// Write a list of GraphSummary objects to a CSV
+let writeSummaryCsv (filename:string) (summaries: GraphSummary list) = 
+    let sb = StringBuilder()
+    sb.AppendLine("Database,Source,SelfLoops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount")
+    for s in summaries do 
+        let cfg = s.Config
+        sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d"
+            cfg,database cfg.source cfg.includeSelfLoops cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
+            s.GeneCount s.InputGeneCoverage s.EdgeCount) |> ignore 
+    File.WriteAllText(filename, sb.ToString())
+
+// Get summary from GraphSummary list 
+let summariseAndExport (summaries: GraphSummary list) = 
+    let csvPath = "summary.csv"
+    writeSummaryCsv csvPath summaries 
+    printfn "CSV summary written to %s" csvPath
+    
 // Save the graphs to a binary file called graphs.bin
 writeCustomBinary "graphs.bin" list 
 
 //Reload the graphs
 let loadedGraphs = readCustomBinary "graphs.bin"
-
 
 fsi.ShowDeclarationValues <- false 
