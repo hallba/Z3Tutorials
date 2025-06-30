@@ -24,6 +24,7 @@ Want to find the smallest number of genes that link the original set
 
 open FSharp.Data
 open System
+open System.Text
 open System.IO
 open System.IO.Compression
 open System.Collections.Generic
@@ -337,11 +338,11 @@ module PathFinding =
 open PathFinding
     
 (*
-GeneTypes: Defines types related to gene network modeling and input: variables, relationships, layout choices, 
+types: Defines types related to gene network modeling and input: variables, relationships, layout choices, 
 input gene sources, main in put configurations
 *)
 
-module GeneTypes =
+module types =
     type BmaVariable = {
                             id: int
                             name: string
@@ -414,7 +415,7 @@ module GeneTypes =
         }
 
 
-open GeneTypes
+open types
 
 (*
 GeneIO:    
@@ -741,7 +742,7 @@ module GraphUtils =
             printGenes this.ctx this.s.Model this.genes
             let used = countUsedGenes this.ctx this.genes this.s.Model
             let result = makeGraph this.ctx this.s.Model this.s this.zGenes this.paths this.genes this.layout this.interactionInfo this.maxEdges this.inputGenes used this.Config
-            Some({ this with m = this.s.Model; s = this.s; numberGenesUsed = used })
+            Some(result)
         | Status.UNSATISFIABLE -> 
             printf "unsat"
             None
@@ -760,7 +761,7 @@ module GraphUtils =
             None
         | _ -> failwith "unknown"
         
-    let findAllEquivalentGraphs (g:  GraphInput) = 
+    (* let findAllEquivalentGraphs (g:  GraphInput) = 
         let rec core (g: GraphInput) acc =
             match graphInputNext g with 
             | None -> acc
@@ -772,7 +773,7 @@ module GraphUtils =
         g.s.Add(g.ctx.MkEq(gc,score))
         let result = core g [g]
         g.s.Pop()
-        result
+        result *)
 
 open GraphUtils
 
@@ -1058,7 +1059,7 @@ module GeneGraph =
         // Iterate over each configuration with index
         for i, config in allOptions |> List.mapi (fun i c -> (i, c)) do
             // Override genesSource field with provided genes array
-            let configWithGenes = { config with genesSource = FromArray(genes) }
+            let configWithGenes = { config with genesSource = FromArray genes}
             
             printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
 
@@ -1104,13 +1105,13 @@ let readCustomBinary (filename: string) : string list =
     [ for _ in 1 .. count -> br.ReadString()]
 
 // Write a list of GraphSummary objects to a CSV
+//CSV header: Database, Source, Selfloops, OneDirection, MaximiseEdges, StrictFilter, GeneCount, InputGeneCoverage, EdgeCount
 let writeSummaryCsv (filename:string) (summaries: GraphSummary list) = 
     let sb = StringBuilder()
-    sb.AppendLine("Database,Source,SelfLoops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount")
     for s in summaries do 
         let cfg = s.Config
         sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d"
-            cfg,database cfg.source cfg.includeSelfLoops cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
+            cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
             s.GeneCount s.InputGeneCoverage s.EdgeCount) |> ignore 
     File.WriteAllText(filename, sb.ToString())
 
@@ -1120,10 +1121,5 @@ let summariseAndExport (summaries: GraphSummary list) =
     writeSummaryCsv csvPath summaries 
     printfn "CSV summary written to %s" csvPath
     
-// Save the graphs to a binary file called graphs.bin
-writeCustomBinary "graphs.bin" list 
-
-//Reload the graphs
-let loadedGraphs = readCustomBinary "graphs.bin"
 
 fsi.ShowDeclarationValues <- false 
