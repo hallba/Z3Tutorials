@@ -28,6 +28,7 @@ open System.IO
 open System.IO.Compression
 open System.Collections.Generic
 open System.Diagnostics
+open System.Runtime.Serialization.Formatters.Binary
 open Microsoft.Z3 
 open Microsoft.Msagl.Core.Geometry
 open Microsoft.Msagl.Core.Geometry.Curves
@@ -1037,7 +1038,6 @@ module GeneGraph =
                 printfn "Graph generated for config %d" (i + 1)
                 allGraphs.Add(graphStr)
 
-
         // Convert to immutable list
         let graphs = allGraphs |> Seq.toList
 
@@ -1054,5 +1054,26 @@ module GeneGraph =
 open GeneGraph
 
 let list = runAllWithGenesInteractive mouseGenesMonika
+list 
+
+// Serialize any serializable data 'string list' to a binary file named 'filename'
+let serializeToFile (filename: string) (data: string list) =
+    use fs = new FileStream(filename, FileMode.Create)
+    let formatter = new BinaryFormatter()
+    formatter.Serialize(fs, data)
+
+// Deserialize data of type string list from the binary file named 'filename'
+let deserializeFromFile<'T> (filename: string) : 'T =
+    use fs = new FileStream(filename, FileMode.Open)
+    let formatter = new BinaryFormatter()
+    formatter.Deserialize(fs) :?> 'T
+
+
+// Save the graph strings list to a binary file
+serializeToFile "graphs.bin" list
+
+// Load the graph strings back from the binary file
+// 'loadedGraphs' contains the deserialized list of graph strings, ready for use
+let loadedGraphs = deserializeFromFile<string list> "graphs.bin"
 
 fsi.ShowDeclarationValues <- false 
