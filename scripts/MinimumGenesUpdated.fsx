@@ -1063,11 +1063,11 @@ module GeneGraph =
             
             printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
 
-            // Run the solver (your 'main' function) on the config
+            // Run the main solver function on the config
             match main configWithGenes with
             | None -> printfn "No graph found for this configuration."
             | Some summary ->
-                // Convert GraphInput to string (BMA or JSON) using your function
+                // Convert GraphInput to string (BMA or JSON)
                 let graphStr = makeGraphInternal summary.Graph
                 printfn "Graph generated for config %d" (i + 1)
                 allGraphs.Add(graphStr)
@@ -1098,7 +1098,7 @@ let writeCustomBinary (filename: string) (data: string list) =
     for s in data do 
         bw.Write(s)
 
-// Read a list of strings from a custom binary file 
+// Read a list of strings from custom binary file 
 let readCustomBinary (filename: string) : string list = 
     use br = new BinaryReader(File.Open(filename, FileMode.Open))
     let count = br.ReadInt32()
