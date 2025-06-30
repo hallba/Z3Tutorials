@@ -403,6 +403,14 @@ module GeneTypes =
         source : Organism
     }
 
+    // Record Type storing information summarising each graph string output  
+    type GraphSummary = {
+            Graph: GraphInput
+            GeneCount: int 
+            InputGeneCoverage: int 
+            EdgeCount: int
+        }
+
 open GeneTypes
 
 (*
@@ -696,8 +704,26 @@ module GraphUtils =
             inputGenes = input
             numberGenesUsed = used
         }
-        makeGraphInternal gI
-        gI
+        // Count number of genes
+        let geneCount = genes.Length
+
+        // Count number of edges / interactions 
+        let edgeCount = 
+            match intData with 
+            | Some dict -> dict.Count
+            | None -> 0
+        
+        // Count how many input genes appear in the graph 
+        let inputGeneCoverage = 
+            input |> Array.filter (fun gene -> Array.contains gene genes) |> Array.length
+
+        // Return the summary
+        {
+            Graph = gI
+            GeneCount = geneCount 
+            InputGeneCoverage = inputGeneCoverage
+            EdgeCount = edgeCount
+        }
 
     let graphInputNext (this: GraphInput) =
         let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
@@ -1032,9 +1058,9 @@ module GeneGraph =
             // Run the solver (your 'main' function) on the config
             match main configWithGenes with
             | None -> printfn "No graph found for this configuration."
-            | Some graphInput ->
+            | Some summary ->
                 // Convert GraphInput to string (BMA or JSON) using your function
-                let graphStr = makeGraphInternal graphInput
+                let graphStr = makeGraphInternal summary.Graph
                 printfn "Graph generated for config %d" (i + 1)
                 allGraphs.Add(graphStr)
 
@@ -1075,5 +1101,6 @@ writeCustomBinary "graphs.bin" list
 
 //Reload the graphs
 let loadedGraphs = readCustomBinary "graphs.bin"
+
 
 fsi.ShowDeclarationValues <- false 
