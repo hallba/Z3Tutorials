@@ -1032,20 +1032,20 @@ module GeneGraph =
     // All combinations of input settings (288 in total)
     let allOptions =
         [
-            for selfLoops in [true; false] do
+            //for selfLoops in [true; false] do
             for oneDir in [true; false] do
-            for maxEdges in [true; false] do
+            //for maxEdges in [true; false] do
             for strictFilter in [true; false] do
             for db in [PPI; Regulon; PTM; MiRNA; Pathways; Combo] do
-            for source in [Human; Mouse; Rat] do
+            //for source in [Human; Mouse; Rat] do
                 yield {
                     defaultInput with
-                        includeSelfLoops = selfLoops
+                        includeSelfLoops = false
                         oneDirection = oneDir
-                        maximiseEdges = maxEdges
+                        maximiseEdges = false
                         strictFilter = strictFilter
                         database = db
-                        source = source
+                        source = Mouse
                 }
         ]
 
