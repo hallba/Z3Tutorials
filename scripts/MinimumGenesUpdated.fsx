@@ -693,45 +693,63 @@ module GraphUtils =
         let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
         result
 
-    let makeGraph (ctx: Context) (m: Model) s zGenes paths genes layoutAlgo intData maxEdges input used config=
-        let (gI:GraphInput) = {
-            ctx = ctx
-            m = m
-            zGenes = zGenes
-            paths = paths
-            genes = genes
-            layout = layoutAlgo
-            interactionInfo = intData
-            maxEdges = maxEdges
-            s = s
+// Record type to hold all makeGraph input parameters 
+
+type MakeGraphInput = {
+    ctx: Context
+    m: Model
+    s: Optimize
+    zGenes: Sort
+    paths: string [][][]
+    genes: string []
+    layoutAlgo: LayoutSelection
+    intData: Dictionary<string,InteractionInput> option
+    maxEdges: bool
+    input: string []
+    used: int
+    config: MainInput
+}
+
+let makeGraph (input:MakeGraphInput): GraphSummary =
+    let (gI:GraphInput) = {
+            ctx = input.ctx
+            m = input.m
+            zGenes = input.zGenes
+            paths = input.paths
+            genes = input.genes
+            layout = input.layoutAlgo
+            interactionInfo = input.intData
+            maxEdges = input.maxEdges
+            s = input.s
             rotation = 0.
-            inputGenes = input
-            numberGenesUsed = used
-            Config = config
-        }
-        // Count number of genes
-        let geneCount = genes.Length
+            inputGenes = input.input
+            numberGenesUsed = input.used
+            Config = input.config
+    }
 
-        // Count number of edges / interactions 
-        let edgeCount = 
-            match intData with 
-            | Some dict -> dict.Count
-            | None -> 0
+    // Count number of genes
+    let geneCount = input.genes.Length
+
+    // Count number of edges / interactions 
+    let edgeCount = 
+        match input.intData with 
+        | Some dict -> dict.Count
+        | None -> 0
         
-        // Count how many input genes appear in the graph 
-        let inputGeneCoverage = 
-            input |> Array.filter (fun gene -> Array.contains gene genes) |> Array.length
+    // Count how many input genes appear in the graph 
+    let inputGeneCoverage = 
+        input.input |> Array.filter (fun gene -> Array.contains gene input.genes) |> Array.length
 
-        // Return the summary
-        {
-            Graph = gI
-            GeneCount = geneCount 
-            InputGeneCoverage = inputGeneCoverage
-            EdgeCount = edgeCount
-            Config = config
-        }
+    // Return the summary
+    {
+        Graph = gI
+        GeneCount = geneCount 
+        InputGeneCoverage = inputGeneCoverage
+        EdgeCount = edgeCount
+        Config = input.config
+    }
 
-    let graphInputNext (this: GraphInput) =
+(* let graphInputNext (this: GraphInput) =
         let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
         let values = Array.map (fun var -> this.m.Eval(var)) variables
         let constraints = Array.map2 (fun var value -> (this.ctx.MkEq(var,value))) variables values
@@ -759,7 +777,7 @@ module GraphUtils =
         | Status.UNSATISFIABLE -> 
             printf "unsat"
             None
-        | _ -> failwith "unknown"
+        | _ -> failwith "unknown" *)
         
     (* let findAllEquivalentGraphs (g:  GraphInput) = 
         let rec core (g: GraphInput) acc =
@@ -917,7 +935,23 @@ module MainSolver =
                     
                     let used = countUsedGenes ctx geneNames s.Model
 
-                    let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes used input
+                    let inputRecord : MakeGraphInput = {
+                        ctx = ctx
+                        m = s.Model
+                        s = s
+                        zGenes = genes
+                        paths = paths
+                        genes = geneNames
+                        layoutAlgo = Sugiyama
+                        intData = interactions
+                        maxEdges = input.maximiseEdges
+                        input = inputGenes
+                        used = used
+                        config = input
+                    }
+                    
+                    let result = makeGraph inputRecord
+
                     //Return both inputs for makeGraphInternal to enable replotting
                     Some(result)
                 | Status.UNSATISFIABLE -> 
@@ -1001,9 +1035,54 @@ module MainSolver =
                     printf "sat\n"
                     //printf "%s\n" <| s.Model.ToString()
                     printGenes ctx s.Model geneNames
-                    let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges 
+
+                    // Build inputGenes by combining genesSource1 and genesSource2
+                    let inputGenes =
+                        let extractGenes source =
+                            match source with
+                            | Demo -> [||]
+                            | FromArray a -> a
+                            | FromFile name -> [| for line in File.ReadLines(name) -> line |]
+                        Array.append (extractGenes input.genesSource1) (extractGenes input.genesSource2) |> Array.distinct
+                    
+                    // Count how many input genes are used in the result
+                    let used = countUsedGenes ctx geneNames s.Model
+
+                    // Build a config (MainInput) record from CrossTalkInput
+                    let input = {
+                        database = input.database
+                        source = input.source
+                        strictFilter = input.strictFilter
+                        exclusions = input.exclusions
+                        genesSource = input.genesSource1
+                        maximiseEdges = input.maximiseEdges
+                        includeSelfLoops = input.includeSelfLoops
+                        oneDirection = input.oneDirection
+                        hubGene = None
+                    }
+
+                    // Construct the full input record for makeGraph
+                    let inputRecord : MakeGraphInput = {
+                        ctx = ctx
+                        m = s.Model
+                        s = s
+                        zGenes = genes
+                        paths = paths
+                        genes = geneNames
+                        layoutAlgo = Sugiyama
+                        intData = interactions
+                        maxEdges = input.maximiseEdges
+                        input = inputGenes
+                        used = used
+                        config = input
+                    } 
+
+                    // Generate the output visualization data
+                    let result = makeGraph inputRecord
+                    
                     //Return both inputs for makeGraphInternal to enable replotting
-                    Some(result)
+                    Some result
+
                 | Status.UNSATISFIABLE -> 
                     printf "unsat"
                     None
