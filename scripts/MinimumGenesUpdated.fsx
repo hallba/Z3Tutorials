@@ -852,7 +852,7 @@ module MainSolver =
         }
     
 
-    let main input =
+    let main config input =
         let search =    match input.hubGene,input.oneDirection with 
                         | None,true -> OneDirectionalPathSearch
                         | None,_ -> pairwisePathSearch
@@ -917,7 +917,7 @@ module MainSolver =
                     
                     let used = countUsedGenes ctx geneNames s.Model
 
-                    let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes used
+                    let result = makeGraph ctx s.Model s genes paths geneNames Sugiyama interactions input.maximiseEdges inputGenes used config
                     //Return both inputs for makeGraphInternal to enable replotting
                     Some(result)
                 | Status.UNSATISFIABLE -> 
@@ -1052,7 +1052,7 @@ module GeneGraph =
     (* modified initial function with additional step to collect all graphs into a list*)
 
     // Main runner function
-    let runAllWithGenesInteractive (genes: string[]) =
+    let runAllWithGenesInteractive (genes: string[]) (input:MainInput) =
         // Mutable list to store all generated graph strings
         let allGraphs = new List<string>()
 
@@ -1064,7 +1064,7 @@ module GeneGraph =
             printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
 
             // Run the main solver function on the config
-            match main configWithGenes with
+            match main configWithGenes input with
             | None -> printfn "No graph found for this configuration."
             | Some summary ->
                 // Convert GraphInput to string (BMA or JSON)
