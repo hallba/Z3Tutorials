@@ -1132,105 +1132,130 @@ module GeneGraph =
 open GeneGraph
 (* modified initial function with additional step to collect all graphs into a list*)
 
-// Main runner function
-// Helper function: Adds timeout 
-let asyncWithTimeout (timeoutMs: int) (workflow: Async<'T>) : Async<'T option> = async {
-    let task = Async.StartAsTask workflow
-    let timeoutTask = Task.Delay(timeoutMs)
-    let! completed = Task.WhenAny(task, timeoutTask) |> Async.AwaitTask
-    if completed = (task :> Task) then
-        let! result = workflow
-        return Some result
-    else
-        return None
-}
+module AsyncHelpers = 
+    // Main runner function
+    // Helper function: Adds timeout 
+    let asyncWithTimeout (timeoutMs: int) (workflow: Async<'T>) : Async<'T option> = async {
+        let task = Async.StartAsTask workflow
+        let timeoutTask = Task.Delay(timeoutMs)
+        let! completed = Task.WhenAny(task, timeoutTask) |> Async.AwaitTask
+        if completed = (task :> Task) then
+            let! result = workflow
+            return Some result
+        else
+            return None
+    }
+open AsyncHelpers
 
-// Modified runAllWithGenes with an added timeout 
-let runAllWithGenes (genes: string[]) = async {
-    // Collect all graph outputs that are successfully computed
-    let allGraphs = new List<string>()
-    let timeoutMs = 10000 // Set timeout per config (in milliseconds)
+module GraphRunner =
+    // Modified runAllWithGenes with an added timeout 
+    let runAllWithGenes (genes: string[]) = async {
+        // Collect all graph outputs that are successfully computed
+        let allGraphs = new List<string>()
+        let timeoutMs = 10000 // Set timeout per config (in milliseconds)
 
-    // Iterate through all configurations
-    for i, conf in allOptions |> List.mapi (fun i c -> (i, c)) do
-        // Inject current gene list into config
-        let configWithGenes = { conf with genesSource = FromArray genes }
+        // Iterate through all configurations
+        for i, conf in allOptions |> List.mapi (fun i c -> (i, c)) do
+            // Inject current gene list into config
+            let configWithGenes = { conf with genesSource = FromArray genes }
 
-        printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
+            printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
 
-        // Wrap 'main' call in a Task to make asynchronous, and apply timeout
-        // assign the result of the async operation (main runner function with configWithGenes)to resultOpt
-        let! resultOpt =
-            asyncWithTimeout timeoutMs (async {
-                // Run main on thread pool since it's blocking
-                return! Async.AwaitTask(Task.Run(fun () -> main configWithGenes))
-            })
+            // Wrap 'main' call in a Task to make asynchronous, and apply timeout
+            // assign the result of the async operation (main runner function with configWithGenes)to resultOpt
+            let! resultOpt =
+                asyncWithTimeout timeoutMs (async {
+                    // Run main on thread pool since it's blocking
+                    return! Async.AwaitTask(Task.Run(fun () -> main configWithGenes))
+                })
 
-        match resultOpt with
-        | Some (Some summary) ->
-            // Successfully got a graph summary
-            let graphStr = makeGraphInternal summary.Graph
-            printfn "Graph generated for config %d" (i + 1)
-            allGraphs.Add(graphStr)
+            match resultOpt with
+            | Some (Some summary) ->
+                // Successfully got a graph summary
+                let graphStr = makeGraphInternal summary.Graph
+                printfn "Graph generated for config %d" (i + 1)
+                allGraphs.Add(graphStr)
 
-        | Some None ->
-            // main ran successfully but returned None (e.g. unsat)
-            printfn "No graph found for this configuration."
+            | Some None ->
+                // main ran successfully but returned None (e.g. unsat)
+                printfn "No graph found for this configuration."
 
-        | None ->
-            // Timeout occurred
-            printfn "Timeout after %d ms for config %d, skipping." timeoutMs (i + 1)
+            | None ->
+                // Timeout occurred
+                printfn "Timeout after %d ms for config %d, skipping." timeoutMs (i + 1)
 
-    // Convert list to immutable format
-    let graphs = allGraphs |> Seq.toList
+        // Convert list to immutable format
+        let graphs = allGraphs |> Seq.toList
 
-    // Display graph summary
-    if graphs.Length = 0 then
-        printfn "No graphs generated."
-    else
-        printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
-        graphs
-        |> List.iteri (fun i g ->
-            let preview =
-                if g.Length > 100 then g.Substring(0, 100) + "..."
-                else g
-            printfn "[%d]: %s" i preview)
+        // Display graph summary
+        if graphs.Length = 0 then
+            printfn "No graphs generated."
+        else
+            printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
+            graphs
+            |> List.iteri (fun i g ->
+                let preview =
+                    if g.Length > 100 then g.Substring(0, 100) + "..."
+                    else g
+                printfn "[%d]: %s" i preview)
 
-    return graphs
-}
+        return graphs
+    }
+open GraphRunner
 
-let list = runAllWithGenes mouseGenesMonika 
+module IOBinary = 
+    // Write list of graph strings to a custom binary file 
+    // Format: [int32 count] followed by [count x string]
+    let writeCustomBinaryAsync (filename: string) (dataAsync: Async <string list>) = async {
+        // Await the async string list 
+        let! data = dataAsync
 
-// Write list of graph strings to a custom binary file 
-// Format: [int32 count] followed by [count x string]
-let writeCustomBinary (filename: string) (data: string list) = 
-    use bw = new BinaryWriter(File.Open(filename, FileMode.Create))
-    bw.Write(data.Length)
-    for s in data do 
-        bw.Write(s)
+        use bw = new BinaryWriter(File.Open(filename, FileMode.Create))
+        bw.Write data.Length
+        for s in data do 
+            bw.Write(s)
+    }
 
-// Read a list of strings from custom binary file 
-let readCustomBinary (filename: string) : string list = 
-    use br = new BinaryReader(File.Open(filename, FileMode.Open))
-    let count = br.ReadInt32()
-    [ for _ in 1 .. count -> br.ReadString()]
+    // Read a list of strings from custom binary file 
+    let readCustomBinaryAsync (filename: string) : Async<string list> = async {
+        use br = new BinaryReader(File.Open(filename, FileMode.Open))
+        let count = br.ReadInt32()
+        let result = [ for _ in 1 .. count -> br.ReadString()]
+        return result
+    }
 
-// Write a list of GraphSummary objects to a CSV
-//CSV header: Database, Source, Selfloops, OneDirection, MaximiseEdges, StrictFilter, GeneCount, InputGeneCoverage, EdgeCount
-let writeSummaryCsv (filename:string) (summaries: GraphSummary list) = 
-    let sb = StringBuilder()
-    for s in summaries do 
-        let cfg = s.Config
-        sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d"
-            cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
-            s.GeneCount s.InputGeneCoverage s.EdgeCount) |> ignore 
-    File.WriteAllText(filename, sb.ToString())
+open IOBinary 
 
-// Get summary from GraphSummary list 
-let summariseAndExport (summaries: GraphSummary list) = 
-    let csvPath = "summary.csv"
-    writeSummaryCsv csvPath summaries 
-    printfn "CSV summary written to %s" csvPath
-    
+module IOSummary = 
+    // Write a list of GraphSummary objects to a CSV
+    //CSV header: Database, Source, Selfloops, OneDirection, MaximiseEdges, StrictFilter, GeneCount, InputGeneCoverage, EdgeCount
+    let writeSummaryCsv (filename:string) (summaries: GraphSummary list) = 
+        let sb = StringBuilder()
+        for s in summaries do 
+            let cfg = s.Config
+            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d"
+                cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
+                s.GeneCount s.InputGeneCoverage s.EdgeCount) |> ignore 
+        File.WriteAllText(filename, sb.ToString())
+
+    // Get summary from GraphSummary list 
+    let summariseAndExport (summaries: GraphSummary list) = 
+        let csvPath = "summary.csv"
+        writeSummaryCsv csvPath summaries 
+        printfn "CSV summary written to %s" csvPath
+
+open IOSummary 
+
+module Main =
+    let graphsAsync = runAllWithGenes mouseGenesMonika 
+    async {
+        do! writeCustomBinaryAsync "graphs.bin" graphsAsync
+        return ()
+    } |> Async.RunSynchronously
+
+    async {
+        let! graphsFromFile = readCustomBinaryAsync "graphs.bin"
+        return ()
+    } |> Async.RunSynchronously
 
 fsi.ShowDeclarationValues <- false 
