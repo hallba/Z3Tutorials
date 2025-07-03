@@ -29,6 +29,7 @@ open System.IO
 open System.IO.Compression
 open System.Collections.Generic
 open System.Diagnostics
+open System.Threading.Tasks
 open System.Runtime.Serialization.Formatters.Binary
 open Microsoft.Z3 
 open Microsoft.Msagl.Core.Geometry
@@ -1128,46 +1129,77 @@ module GeneGraph =
                 }
         ]
 
-    (* modified initial function with additional step to collect all graphs into a list*)
-
-    // Main runner function
-    let runAllWithGenesInteractive (genes: string[]) =
-        // Mutable list to store all generated graph strings
-        let allGraphs = new List<string>()
-
-        // Iterate over each configuration with index
-        for i, conf in allOptions |> List.mapi (fun i c -> (i, c)) do
-            // Override genesSource field with provided genes array
-            let configWithGenes = { conf with genesSource = FromArray genes}
-            
-            printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
-
-            // Run the main solver function on the config
-            match main configWithGenes with
-            | Some summary ->
-                let graphStr = makeGraphInternal summary.Graph
-                printfn "Graph generated for config %d" (i + 1)
-                allGraphs.Add(graphStr)
-            | None ->
-                printfn "No graph found for this configuration."
-
-
-        // Convert to immutable list
-        let graphs = allGraphs |> Seq.toList
-
-        if graphs.Length = 0 then
-            printfn "No graphs generated."
-        else
-            // Display all graphs with index and preview (first 100 chars)
-            printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
-            graphs |> List.iteri (fun i g -> 
-                let preview = if g.Length > 100 then g.Substring(0, 100) + "..." else g
-                printfn "[%d]: %s" i preview)
-        graphs
-
 open GeneGraph
+(* modified initial function with additional step to collect all graphs into a list*)
 
-let list = runAllWithGenesInteractive mouseGenesMonika 
+// Main runner function
+// Helper function: Adds timeout 
+let asyncWithTimeout (timeoutMs: int) (workflow: Async<'T>) : Async<'T option> = async {
+    let task = Async.StartAsTask workflow
+    let timeoutTask = Task.Delay(timeoutMs)
+    let! completed = Task.WhenAny(task, timeoutTask) |> Async.AwaitTask
+    if completed = (task :> Task) then
+        let! result = workflow
+        return Some result
+    else
+        return None
+}
+
+// Modified runAllWithGenes with an added timeout 
+let runAllWithGenes (genes: string[]) = async {
+    // Collect all graph outputs that are successfully computed
+    let allGraphs = new List<string>()
+    let timeoutMs = 10000 // Set timeout per config (in milliseconds)
+
+    // Iterate through all configurations
+    for i, conf in allOptions |> List.mapi (fun i c -> (i, c)) do
+        // Inject current gene list into config
+        let configWithGenes = { conf with genesSource = FromArray genes }
+
+        printfn "[%d/%d] Trying config: %A" (i + 1) allOptions.Length configWithGenes
+
+        // Wrap 'main' call in a Task to make asynchronous, and apply timeout
+        // assign the result of the async operation (main runner function with configWithGenes)to resultOpt
+        let! resultOpt =
+            asyncWithTimeout timeoutMs (async {
+                // Run main on thread pool since it's blocking
+                return! Async.AwaitTask(Task.Run(fun () -> main configWithGenes))
+            })
+
+        match resultOpt with
+        | Some (Some summary) ->
+            // Successfully got a graph summary
+            let graphStr = makeGraphInternal summary.Graph
+            printfn "Graph generated for config %d" (i + 1)
+            allGraphs.Add(graphStr)
+
+        | Some None ->
+            // main ran successfully but returned None (e.g. unsat)
+            printfn "No graph found for this configuration."
+
+        | None ->
+            // Timeout occurred
+            printfn "Timeout after %d ms for config %d, skipping." timeoutMs (i + 1)
+
+    // Convert list to immutable format
+    let graphs = allGraphs |> Seq.toList
+
+    // Display graph summary
+    if graphs.Length = 0 then
+        printfn "No graphs generated."
+    else
+        printfn "\nGenerated %d graphs. Select one by index (0 to %d):" graphs.Length (graphs.Length - 1)
+        graphs
+        |> List.iteri (fun i g ->
+            let preview =
+                if g.Length > 100 then g.Substring(0, 100) + "..."
+                else g
+            printfn "[%d]: %s" i preview)
+
+    return graphs
+}
+
+let list = runAllWithGenes mouseGenesMonika 
 
 // Write list of graph strings to a custom binary file 
 // Format: [int32 count] followed by [count x string]
