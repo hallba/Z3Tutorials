@@ -1345,21 +1345,33 @@ open IOBinary
 
 module IOSummary = 
     
-    // Writes a detailed CSV from a list of GraphOutput records
-    // Includes all config fields, metrics and the full escaped BMA string
+    (* Writes a CSV summarising a list of GraphOutput data
+    The BMAString is included raw so the CSV opens cleanly in Excel and the BMAStirng can be directly copy-pasted into the BMA web app*)
+
     let writeGraphOutputCsv (filename: string) (outputs: GraphOutput list) = 
         let sb = System.Text.StringBuilder()
         sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,BMAString" |> ignore
+
         for o in outputs do
             let s = o.Summary
             let cfg = s.Config
-            let cleanGraphStr = o.Graph.Replace("\"", "\"\"") // escape quotes
-            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\""
+            let rawBmaStr = o.Graph
+
+            // Wrap BMA string in quotes if it contains comma or newline
+            let bmaField =
+                if rawBmaStr.Contains(",") || rawBmaStr.Contains("\n") then
+                    "\"" + rawBmaStr + "\""
+                else
+                    rawBmaStr
+
+            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,%s"
                 cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
                 cfg.maximiseEdges cfg.strictFilter
                 s.GeneCount s.InputGeneCoverage s.EdgeCount
-                cleanGraphStr) |> ignore
+                bmaField) |> ignore
+
         File.WriteAllText(filename, sb.ToString())
+
     
     // Helper function to export a full summary CSV and print the graph count 
     // Saves the output to 'summary.csv' and logs a confirmation message
