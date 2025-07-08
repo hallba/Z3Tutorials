@@ -1209,9 +1209,15 @@ module GraphRunner =
     }
 open GraphRunner
 
+(*
+Module for binary serialisation and deserialisation of graph outputs, including 
+configuration, counts, BMA strings, and gene source data.
+*)
+
 module IOBinary = 
 
-    //Serialise GenesSource as it is a discriminated union
+    (* Serialise GeneData discriminated union into a binary format using a
+    tag-based encoding: 0 = Demo, 1 = FromArray, 2 = FromFile *)
     let writeGenesSource (bw: BinaryWriter) (gs: GeneData) =
         match gs with
         | Demo -> 
@@ -1225,7 +1231,7 @@ module IOBinary =
             bw.Write(2) // tag for FromFile
             bw.Write filename
 
-    //Deserialise GenesSource
+    //Deserialise GeneData from binary format using tags
     let readGenesSource (br: BinaryReader) : GeneData =
         let tag = br.ReadInt32()
         match tag with
@@ -1239,8 +1245,10 @@ module IOBinary =
             FromFile filename
         | _ -> failwithf "Unknown GenesSource tag: %d" tag
 
-    // Write list of graph strings to a custom binary file 
-    // Format: [int32 count] followed by [count x string]
+    (* Write list of graph strings to a compact binary file 
+    Saves the BMA string, graph config, counts and gene source for each graph
+    Format: [int32 count] followed by [count x graph record]
+    *)
     let writeGraphOutputBinary (filename: string) (data: GraphOutput list) = 
         use bw = new BinaryWriter(File.Open(filename, FileMode.Create))
         bw.Write data.Length
@@ -1336,19 +1344,9 @@ module IOBinary =
 open IOBinary 
 
 module IOSummary = 
-    // Write a list of GraphSummary objects to a CSV
-    //CSV header: Database, Source, Selfloops, OneDirection, MaximiseEdges, StrictFilter, GeneCount, InputGeneCoverage, EdgeCount
-    let writeSummaryCsv (filename: string) (summaries: GraphSummary list) = 
-        let sb = System.Text.StringBuilder()
-        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount" |> ignore
-        for s in summaries do
-            let cfg = s.Config
-            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d"
-                cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
-                cfg.maximiseEdges cfg.strictFilter
-                s.GeneCount s.InputGeneCoverage s.EdgeCount) |> ignore
-        File.WriteAllText(filename, sb.ToString())
-
+    
+    // Writes a detailed CSV from a list of GraphOutput records
+    // Includes all config fields, metrics and the full escaped BMA string
     let writeGraphOutputCsv (filename: string) (outputs: GraphOutput list) = 
         let sb = System.Text.StringBuilder()
         sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,BMAString" |> ignore
@@ -1362,6 +1360,9 @@ module IOSummary =
                 s.GeneCount s.InputGeneCoverage s.EdgeCount
                 cleanGraphStr) |> ignore
         File.WriteAllText(filename, sb.ToString())
+    
+    // Helper function to export a full summary CSV and print the graph count 
+    // Saves the output to 'summary.csv' and logs a confirmation message
     let summariseAndExport (outputs: GraphOutput list) =
         let csvPath = "summary.csv"
         writeGraphOutputCsv csvPath outputs
@@ -1381,4 +1382,3 @@ module Main =
     
 open Main 
 
-fsi.ShowDeclarationValues <- false 
