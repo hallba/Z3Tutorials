@@ -1147,6 +1147,17 @@ module AsyncHelpers =
     }
 open AsyncHelpers
 
+module Compression = 
+    let compressToBase64 (input:string): string = 
+            let bytes = Encoding.UTF8.GetBytes(input)
+            use output = new MemoryStream()
+            use gzip = new GZipStream(output, CompressionMode.Compress)
+            gzip.Write(bytes, 0, bytes.Length)
+            gzip.Close()
+            Convert.ToBase64String(output.ToArray())
+
+open Compression 
+
 module GraphRunner =
     type GraphOutput = {
         Graph: string // BMA-compatible string 
@@ -1177,8 +1188,9 @@ module GraphRunner =
             match resultOpt with
             | Some (Some summary) ->
                 // Successfully got a graph summary
-                let graphStr = makeGraphInternal summary.Graph
-                let output = { Graph = graphStr; Summary = summary}
+                let rawJson = makeGraphInternal summary.Graph
+                let compressedBMA = compressToBase64 rawJson
+                let output = { Graph = compressedBMA; Summary = summary}
                 printfn "Graph generated for config %d" (i + 1)
                 allOutputs.Add(output)
 
@@ -1355,14 +1367,20 @@ module IOSummary =
         for o in outputs do
             let s = o.Summary
             let cfg = s.Config
-            let rawBmaStr = o.Graph
+            let bmaStr =
+                if o.Graph.StartsWith("H4sI") then
+                    // Already compressed Base64 string, use as is
+                    o.Graph
+                else
+                    // Not compressed, compress now
+                    Compression.compressToBase64 o.Graph
 
             // Wrap BMA string in quotes if it contains comma or newline
             let bmaField =
-                if rawBmaStr.Contains(",") || rawBmaStr.Contains("\n") then
-                    "\"" + rawBmaStr + "\""
+                if bmaStr.Contains(",") || bmaStr.Contains("\n") then
+                    "\"" + bmaStr + "\""
                 else
-                    rawBmaStr
+                    bmaStr
 
             sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,%s"
                 cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
@@ -1371,6 +1389,7 @@ module IOSummary =
                 bmaField) |> ignore
 
         File.WriteAllText(filename, sb.ToString())
+
 
     
     // Helper function to export a full summary CSV and print the graph count 
@@ -1384,13 +1403,54 @@ module IOSummary =
 open IOSummary 
 
 module Main =
-    let outputsAsync = runAllWithGenes mouseGenesMonika
+    //let outputsAsync = runAllWithGenes mouseGenesMonika
+    let testGenes = mouseGenesMonika |> Array.take 5
+    let testConfig = {
+        defaultInput with 
+            database = Pathways
+            source = Mouse
+            includeSelfLoops = false
+            oneDirection = true
+            maximiseEdges = false
+            strictFilter = true
+            genesSource = FromArray testGenes
+    } 
 
-    async {
-        let! outputs = outputsAsync
-        writeGraphOutputBinary "graphs.bin" outputs
-        summariseAndExport outputs
-    } |> Async.RunSynchronously
+    let testAsync = async {
+        let! resultOpt = asyncWithTimeout 60000 (async {
+            return! Async.AwaitTask(Task.Run(fun () -> main testConfig))
+        })
+
+        match resultOpt with
+        | Some (Some summary) ->
+            let rawJson = makeGraphInternal summary.Graph
+            let compressedBMA = compressToBase64 rawJson
+            printfn "Graph generated."
+
+            if compressedBMA.StartsWith("H4sIA") then
+                printfn "BMA string is GZip-compressed."
+            else
+                printfn "Warning: Output may not be a valid BMA string."
+
+            let cfg = summary.Config
+            let csvLine = sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\""
+                            cfg.database cfg.source cfg.includeSelfLoops
+                            cfg.oneDirection cfg.maximiseEdges cfg.strictFilter
+                            summary.GeneCount summary.InputGeneCoverage summary.EdgeCount
+                            (compressedBMA.Replace("\"", "\"\""))
+
+            let csvPath = "test_summary.csv"
+            File.WriteAllText(csvPath, "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,BMAString\n" + csvLine)
+            printfn $"Test CSV written to: {csvPath}"
+
+        | Some None ->
+            printfn "main returned None — no graph generated for config."
+
+        | None ->
+            printfn "Timeout — main took too long for test config."
+    }
+
+    testAsync |> Async.RunSynchronously
     
 open Main 
 
