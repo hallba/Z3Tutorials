@@ -1228,7 +1228,7 @@ module IOSummary =
 
     let writeGraphOutputCsv (filename: string) (outputs: GraphOutput list) = 
         let sb = System.Text.StringBuilder()
-        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,BMAString" |> ignore
+        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,Genes,BMAString" |> ignore
 
         for o in outputs do
             let s = o.Summary
@@ -1240,6 +1240,12 @@ module IOSummary =
                 else
                     // Not compressed, compress now
                     Compression.compressToBase64 o.Graph
+            
+            let geneList = 
+                match cfg.genesSource with 
+                | FromArray arr -> arr |> String.concat ";"
+                | FromFile path -> path 
+                | Demo -> "Demo"
 
             // Wrap BMA string in quotes if it contains comma or newline
             let bmaField =
@@ -1247,11 +1253,13 @@ module IOSummary =
                     "\"" + bmaStr + "\""
                 else
                     bmaStr
+            
 
-            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,%s"
+            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\",\"%s\""
                 cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
                 cfg.maximiseEdges cfg.strictFilter
                 s.GeneCount s.InputGeneCoverage s.EdgeCount
+                geneList
                 bmaField) |> ignore
 
         File.WriteAllText(filename, sb.ToString())
