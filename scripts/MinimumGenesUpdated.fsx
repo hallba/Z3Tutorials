@@ -1221,140 +1221,6 @@ module GraphRunner =
     }
 open GraphRunner
 
-(*
-Module for binary serialisation and deserialisation of graph outputs, including 
-configuration, counts, BMA strings, and gene source data.
-*)
-
-module IOBinary = 
-
-    (* Serialise GeneData discriminated union into a binary format using a
-    tag-based encoding: 0 = Demo, 1 = FromArray, 2 = FromFile *)
-    let writeGenesSource (bw: BinaryWriter) (gs: GeneData) =
-        match gs with
-        | Demo -> 
-            bw.Write(0) // tag for Demo
-        | FromArray arr ->
-            bw.Write(1) // tag for FromArray
-            bw.Write(arr.Length)
-            for s in arr do
-                bw.Write(s)
-        | FromFile filename ->
-            bw.Write(2) // tag for FromFile
-            bw.Write filename
-
-    //Deserialise GeneData from binary format using tags
-    let readGenesSource (br: BinaryReader) : GeneData =
-        let tag = br.ReadInt32()
-        match tag with
-        | 0 -> Demo
-        | 1 ->
-            let length = br.ReadInt32()
-            let arr = Array.init length (fun _ -> br.ReadString())
-            FromArray arr
-        | 2 ->
-            let filename = br.ReadString()
-            FromFile filename
-        | _ -> failwithf "Unknown GenesSource tag: %d" tag
-
-    (* Write list of graph strings to a compact binary file 
-    Saves the BMA string, graph config, counts and gene source for each graph
-    Format: [int32 count] followed by [count x graph record]
-    *)
-    let writeGraphOutputBinary (filename: string) (data: GraphOutput list) = 
-        use bw = new BinaryWriter(File.Open(filename, FileMode.Create))
-        bw.Write data.Length
-        for item in data do
-            bw.Write(item.Graph)
-            let cfg = item.Summary.Config
-            bw.Write(cfg.database.ToString())
-            bw.Write(cfg.source.ToString())
-            bw.Write(cfg.includeSelfLoops)
-            bw.Write(cfg.oneDirection)
-            bw.Write(cfg.maximiseEdges)
-            bw.Write(cfg.strictFilter)
-            bw.Write(item.Summary.GeneCount)
-            bw.Write(item.Summary.InputGeneCoverage)
-            bw.Write(item.Summary.EdgeCount)
-
-            // Write genesSource using helper function
-            writeGenesSource bw cfg.genesSource
-
-    // Read a list of strings from custom binary file 
-    let readGraphOutputBinary (filename: string) : GraphOutput list =
-        use br = new BinaryReader(File.Open(filename, FileMode.Open))
-        let count = br.ReadInt32()
-        [ for _ in 1 .. count ->
-            let graph = br.ReadString()
-            // Parse database string back to OmniSource
-            let database = 
-                match br.ReadString() with
-                | "PPI" -> PPI
-                | "Regulon" -> Regulon
-                | "PTM" -> PTM
-                | "MiRNA" -> MiRNA
-                | "Pathways" -> Pathways
-                | "Combo" -> Combo
-                | s -> failwithf "Unknown database type: %s" s
-                
-            // Parse source string back to Organism
-            let source = 
-                match br.ReadString() with
-                | "Human" -> Human
-                | "Mouse" -> Mouse
-                | "Rat" -> Rat
-                | s -> failwithf "Unknown organism: %s" s
-
-            let selfLoops = br.ReadBoolean()
-            let oneDir = br.ReadBoolean()
-            let maxEdges = br.ReadBoolean()
-            let strict = br.ReadBoolean()
-            let geneCount = br.ReadInt32()
-            let coverage = br.ReadInt32()
-            let edgeCount = br.ReadInt32()
-
-            let cfg: MainInput = {
-                genesSource = readGenesSource br
-                includeSelfLoops = selfLoops
-                oneDirection = oneDir
-                maximiseEdges = maxEdges
-                exclusions = None
-                database = database
-                strictFilter = strict
-                hubGene = None
-                source = source
-            }
-            // Create a dummy GraphInput since we don't serialize the full graph context
-            let dummyGraphInput = {
-                ctx = new Context()
-                m = null
-                zGenes = null
-                paths = [||]
-                genes = [||]
-                layout = Sugiyama
-                interactionInfo = None
-                maxEdges = false
-                s = null
-                rotation = 0.0
-                inputGenes = [||]
-                numberGenesUsed = 0
-                Config = cfg
-            }
-
-            {
-                Graph = graph
-                Summary = {
-                    Graph = dummyGraphInput
-                    GeneCount = geneCount
-                    InputGeneCoverage = coverage
-                    EdgeCount = edgeCount
-                    Config = cfg
-                }
-            } : GraphOutput
-        ]
-
-open IOBinary 
-
 module IOSummary = 
     
     (* Writes a CSV summarising a list of GraphOutput data
@@ -1390,20 +1256,10 @@ module IOSummary =
 
         File.WriteAllText(filename, sb.ToString())
 
-
-    
-    // Helper function to export a full summary CSV and print the graph count 
-    // Saves the output to 'summary.csv' and logs a confirmation message
-    let summariseAndExport (outputs: GraphOutput list) =
-        let csvPath = "summary.csv"
-        writeGraphOutputCsv csvPath outputs
-        printfn "Total successful graphs: %d" outputs.Length
-        printfn "CSV summary written to %s" csvPath
-
 open IOSummary 
 
 module Main =
-    //let outputsAsync = runAllWithGenes mouseGenesMonika
+    (* Testing block using a batch of genes from mouseGenesMonika for faster debugging
     let testGenes = mouseGenesMonika |> Array.take 5
     let testConfig = {
         defaultInput with 
@@ -1450,7 +1306,20 @@ module Main =
             printfn "Timeout — main took too long for test config."
     }
 
-    testAsync |> Async.RunSynchronously
+    testAsync |> Async.RunSynchronously*)
+
+    let outputAsync = async {
+
+        // Run all graphs for full mouseGenesMonika asynchronously 
+        let! outputs = runAllWithGenes mouseGenesMonika
+
+        // Write the CSV summary with compressed BMA strings 
+        writeGraphOutputCsv "full_output_summary.csv" outputs
+        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
+    }
+
+    outputAsync |> Async.RunSynchronously 
+
     
 open Main 
 
