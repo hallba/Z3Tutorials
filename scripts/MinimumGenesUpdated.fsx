@@ -1221,11 +1221,6 @@ module GraphRunner =
     }
 open GraphRunner
 
-(*
-Module for binary serialisation and deserialisation of graph outputs, including 
-configuration, counts, BMA strings, and gene source data.
-*)
-
 module IOBinary = 
 
     (* Serialise GeneData discriminated union into a binary format using a
@@ -1362,48 +1357,50 @@ module IOSummary =
 
     let writeGraphOutputCsv (filename: string) (outputs: GraphOutput list) = 
         let sb = System.Text.StringBuilder()
-        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,BMAString" |> ignore
+        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,Genes,BMAString" |> ignore
 
+        //Decompress compressed BMA string for CSV
+        
         for o in outputs do
             let s = o.Summary
             let cfg = s.Config
-            let bmaStr =
+            let rawJson = 
                 if o.Graph.StartsWith("H4sI") then
-                    // Already compressed Base64 string, use as is
-                    o.Graph
+                    // decompress base64 gzip to raw JSON string
+                    let decompress (base64Str: string) =
+                        let compressedBytes = Convert.FromBase64String(base64Str)
+                        use inputStream = new System.IO.MemoryStream(compressedBytes)
+                        use gzipStream = new System.IO.Compression.GZipStream(inputStream, System.IO.Compression.CompressionMode.Decompress)
+                        use reader = new System.IO.StreamReader(gzipStream)
+                        reader.ReadToEnd()
+                    decompress o.Graph
                 else
-                    // Not compressed, compress now
-                    Compression.compressToBase64 o.Graph
+                    o.Graph // already raw JSON (unlikely in your case)
 
-            // Wrap BMA string in quotes if it contains comma or newline
+            // Wrap raw JSON in quotes, escape inner quotes for CSV compliance
             let bmaField =
-                if bmaStr.Contains(",") || bmaStr.Contains("\n") then
-                    "\"" + bmaStr + "\""
-                else
-                    bmaStr
+                let escaped = rawJson.Replace("\"", "\"\"")
+                "\"" + escaped + "\""
+            
+            let geneList = 
+                match cfg.genesSource with 
+                | FromArray arr -> arr |> String.concat ";"
+                | FromFile path -> path 
+                | Demo -> "Demo"
 
-            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,%s"
+            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\",\"%s\""
                 cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
                 cfg.maximiseEdges cfg.strictFilter
                 s.GeneCount s.InputGeneCoverage s.EdgeCount
+                geneList
                 bmaField) |> ignore
 
         File.WriteAllText(filename, sb.ToString())
 
-
-    
-    // Helper function to export a full summary CSV and print the graph count 
-    // Saves the output to 'summary.csv' and logs a confirmation message
-    let summariseAndExport (outputs: GraphOutput list) =
-        let csvPath = "summary.csv"
-        writeGraphOutputCsv csvPath outputs
-        printfn "Total successful graphs: %d" outputs.Length
-        printfn "CSV summary written to %s" csvPath
-
 open IOSummary 
 
 module Main =
-    //let outputsAsync = runAllWithGenes mouseGenesMonika
+    (* Testing block using a batch of genes from mouseGenesMonika for faster debugging
     let testGenes = mouseGenesMonika |> Array.take 5
     let testConfig = {
         defaultInput with 
@@ -1450,7 +1447,19 @@ module Main =
             printfn "Timeout — main took too long for test config."
     }
 
-    testAsync |> Async.RunSynchronously
+    testAsync |> Async.RunSynchronously*)
+
+    let outputAsync = async {
+
+        // Run all graphs for full mouseGenesMonika asynchronously 
+        let! outputs = runAllWithGenes mouseGenesMonika
+
+        // Write the CSV summary with compressed BMA strings 
+        writeGraphOutputCsv "full_output_summary.csv" outputs
+        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
+    }
+
+    outputAsync |> Async.RunSynchronously 
+
     
 open Main 
-
