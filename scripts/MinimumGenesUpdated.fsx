@@ -25,12 +25,13 @@ Want to find the smallest number of genes that link the original set
 open FSharp.Data
 open System
 open System.Text
+open System.Text.Json
+open System.Text.Json.Nodes
 open System.IO
 open System.IO.Compression
 open System.Collections.Generic
 open System.Diagnostics
 open System.Threading.Tasks
-open System.Runtime.Serialization.Formatters.Binary
 open Microsoft.Z3 
 open Microsoft.Msagl.Core.Geometry
 open Microsoft.Msagl.Core.Geometry.Curves
@@ -1355,15 +1356,12 @@ module IOSummary =
     (* Writes a CSV summarising a list of GraphOutput data
     The BMAString is included raw so the CSV opens cleanly in Excel and the BMAStirng can be directly copy-pasted into the BMA web app*)
 
-    let writeGraphOutputCsv (filename: string) (outputs: GraphOutput list) = 
-        let sb = System.Text.StringBuilder()
-        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,Genes,BMAString" |> ignore
 
-        //Decompress compressed BMA string for CSV
-        
+    /// Write all full raw JSON BMA strings to a pretty-printed JSON file
+    let writeBmaJsonFile (filename: string) (outputs: GraphOutput list) =
+        use writer = new StreamWriter(filename)
+
         for o in outputs do
-            let s = o.Summary
-            let cfg = s.Config
             let rawJson = 
                 if o.Graph.StartsWith("H4sI") then
                     // decompress base64 gzip to raw JSON string
@@ -1375,31 +1373,49 @@ module IOSummary =
                         reader.ReadToEnd()
                     decompress o.Graph
                 else
-                    o.Graph // already raw JSON (unlikely in your case)
+                    o.Graph
 
-            // Wrap raw JSON in quotes, escape inner quotes for CSV compliance
-            let bmaField =
-                let escaped = rawJson.Replace("\"", "\"\"")
-                "\"" + escaped + "\""
-            
+            // Parse raw JSON string into a JsonNode
+            let jsonNode = JsonNode.Parse(rawJson)
+
+            // Serialize the JsonNode with indentation to string
+            let options = JsonSerializerOptions(WriteIndented = true)
+            let jsonString = jsonNode.ToJsonString(options)
+
+            // Write a single JSON object per line (no array brackets)
+            writer.WriteLine(jsonString)
+    
+    /// Write CSV summary referencing the JSON file via an index column
+    let writeGraphOutputCsvWithJsonReference (filenameCsv: string) (filenameJson: string) (outputs: GraphOutput list) = 
+        // First write the JSON file
+        writeBmaJsonFile filenameJson outputs
+
+        let sb = StringBuilder()
+        sb.AppendLine "Database,Source,Selfloops,OneDirection,MaximiseEdges,StrictFilter,GeneCount,InputGeneCoverage,EdgeCount,Genes,JsonIndex" |> ignore
+
+        for i, o in outputs |> List.mapi (fun i o -> i, o) do
+            let s = o.Summary
+            let cfg = s.Config
+
             let geneList = 
                 match cfg.genesSource with 
                 | FromArray arr -> arr |> String.concat ";"
                 | FromFile path -> path 
                 | Demo -> "Demo"
 
-            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\",\"%s\""
+            sb.AppendLine(sprintf "%A,%A,%b,%b,%b,%b,%d,%d,%d,\"%s\",%d"
                 cfg.database cfg.source cfg.includeSelfLoops cfg.oneDirection
                 cfg.maximiseEdges cfg.strictFilter
                 s.GeneCount s.InputGeneCoverage s.EdgeCount
                 geneList
-                bmaField) |> ignore
+                i) |> ignore
 
-        File.WriteAllText(filename, sb.ToString())
+        File.WriteAllText(filenameCsv, sb.ToString())
+
 
 open IOSummary 
 
-module Main =
+(* module Main =
     (* Testing block using a batch of genes from mouseGenesMonika for faster debugging
     let testGenes = mouseGenesMonika |> Array.take 5
     let testConfig = {
@@ -1455,11 +1471,49 @@ module Main =
         let! outputs = runAllWithGenes mouseGenesMonika
 
         // Write the CSV summary with compressed BMA strings 
-        writeGraphOutputCsv "full_output_summary.csv" outputs
+        writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
         printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
     }
 
     outputAsync |> Async.RunSynchronously 
 
     
-open Main 
+open Main *)
+
+let testExport = async {
+    let testGenes = [| "Agps"; "Ftl1"; "Tgm2" |]
+
+    let config = {
+        defaultInput with
+            database = Pathways
+            source = Mouse
+            includeSelfLoops = false
+            oneDirection = true
+            maximiseEdges = false
+            strictFilter = true
+            genesSource = FromArray testGenes
+    }
+
+    let! resultOpt = asyncWithTimeout 60000 (async {
+        return! Async.AwaitTask(Task.Run(fun () -> main config))
+    })
+
+    match resultOpt with
+    | Some (Some summary) ->
+        let rawJson = makeGraphInternal summary.Graph
+        let compressed = compressToBase64 rawJson
+        let output: GraphOutput = {
+            Graph = compressed
+            Summary = summary
+        }
+
+        // Call the CSV writer
+        writeGraphOutputCsvWithJsonReference "test_output.csv" "testgraphs_outputs.json" [output]
+        printfn "✅ Test graph written to test_output.csv and json file testgraphs_outputs.json createds"
+    | Some None ->
+        printfn "⚠️ main returned None – no graph generated."
+    | None ->
+        printfn "⏱️ Timeout – main took too long."
+}
+
+testExport |> Async.RunSynchronously
