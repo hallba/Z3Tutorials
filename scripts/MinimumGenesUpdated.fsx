@@ -469,7 +469,8 @@ GeneUtils: Provides utility functions to work with genes, by interacting with th
     to retrieve the interaction details for that edge if it's available
     - localGeneUsed: for a given gene and a path ID, constructs a Z3 boolean variable representing 
     whether that gene is used in a specific path, by checking if the gene matches any variable in the path.
-    - createVariables and pathToConstraint: generating Z3 variables representing paths and constraining these to match 
+    - createVariables and pathToConstrai
+    nt: generating Z3 variables representing paths and constraining these to match 
     specific gene sequences 
     - estimateComplexity: roughly estimates and prints the search space size (number of path alternatives) on a log scale, based on input gene data source
    

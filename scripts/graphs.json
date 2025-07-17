@@ -1,0 +1,5389 @@
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rras",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Pik3r1",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcl12",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hif1a",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rb1",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 17,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 18,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 5,
+        "ToVariable": 6,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 6,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 7,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 1,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 9,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 8,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 10,
+        "ToVariable": 11,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 11,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 1,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 12,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 11,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 13,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 14,
+        "ToVariable": 15,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 15,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 15,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 13,
+        "ToVariable": 16,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 16,
+        "ToVariable": 14,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 1475.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Plau Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Pik3r1 Activator-PMID: Rb1 Inhibitor-PMID:BioGRID:7838535;HPRD:7838535"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcl12 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 6,
+        "Name": "Rras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Pik3r1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rras Activator-PMID:DOMINO:17474147;SPIKE_LC:17474147"
+      },
+      {
+        "Id": 8,
+        "Name": "Cxcl12",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hif1a Activator-PMID: Fn1 Activator-PMID:HPRD:11023498"
+      },
+      {
+        "Id": 9,
+        "Name": "Hif1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:10551817;ProtMapper:18519666;ProtMapper:24099156;SIGNOR:18519666;SPIKE:10551817;SPIKE_LC:10551817;iPTMnet:18519666 Rb1 Activator-PMID:SPIKE:15674338;SPIKE_LC:15674338"
+      },
+      {
+        "Id": 10,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 40.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825"
+      },
+      {
+        "Id": 13,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 40.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 15,
+        "Name": "Rb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:HPRD:9315663;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 16,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fn1 Inhibitor-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rras",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Pik3ca",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcr4",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "F2",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rb1",
+        "Id": 18,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 19,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 20,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 5,
+        "ToVariable": 6,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 6,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 7,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 2,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 8,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 9,
+        "ToVariable": 10,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 10,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 1,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 12,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 9,
+        "ToVariable": 13,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 13,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 14,
+        "ToVariable": 15,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 15,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 15,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 17,
+        "ToVariable": 18,
+        "Type": "Activator"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 18,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 10,
+        "ToVariable": 16,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 16,
+        "ToVariable": 19,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 19,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 45,
+        "FromVariable": 15,
+        "ToVariable": 16,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 14.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Plau Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Pik3ca Activator-PMID: Rac1 Activator-PMID: Rb1 Inhibitor-PMID:BioGRID:7838535;HPRD:7838535"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcr4 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 6,
+        "Name": "Rras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Pik3ca",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rras Activator-PMID:"
+      },
+      {
+        "Id": 8,
+        "Name": "Cxcr4",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:CollecTRI:10229837;CollecTRI:11145693;DoRothEA:10229837 F2 Activator-PMID:"
+      },
+      {
+        "Id": 9,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 10,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 11,
+        "Name": "Mapk1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID:ProtMapper:17088251"
+      },
+      {
+        "Id": 12,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825 Mapk1 Mixed-PMID:HPRD-phos:19413330;HPRD-phos:8384717;HPRD:8384717;KEA:12213825;KEA:15367685;KEA:16009338;KEA:17570479;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15878863;ProtMapper:19723873;ProtMapper:21980398;SIGNOR:19723873;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:19413330;iPTMnet:19723873;iPTMnet:8384717"
+      },
+      {
+        "Id": 13,
+        "Name": "F2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:SIGNOR:17635716"
+      },
+      {
+        "Id": 14,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 15,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 16,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID: Rac1 Activator-PMID:Lit-BM-17:19738201"
+      },
+      {
+        "Id": 17,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 18,
+        "Name": "Rb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:HPRD:9315663;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 19,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fn1 Inhibitor-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Serpina1a",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Lrp1",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk14",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fyn",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfe2l2",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fth1",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Prkca",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Itgb1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 14,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 15,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 16,
+        "FromVariable": 2,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 17,
+        "FromVariable": 5,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 18,
+        "FromVariable": 3,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 2,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 2,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 7,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 9,
+        "ToVariable": 10,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 10,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 11,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 11,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 11,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 12,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 13,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 13,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 2,
+        "ToVariable": 12,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 63.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Lrp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 63.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Activator-PMID:Baccin2019:862645615131125;CellTalkDB:8626456;Cellinker:15131125;Cellinker:8626456;HPRD:15131125;LRdb:151;LRdb:8626456;SIGNOR:8626456;connectomeDB2020:15131125;connectomeDB2020:8626456"
+      },
+      {
+        "Id": 2,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 63.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Lrp1 Activator-PMID:Adhesome:11854294;Adhesome:12789267;HPRD:11854294;HPRD:12789267 Prkca Mixed-PMID:ACSN:11313945;ACSN:11447289;ACSN:11940581;ACSN:12040186;ACSN:12845332;ACSN:14585353;ACSN:15567848;ACSN:16488589;ACSN:17496910;ACSN:19568798;ACSN:19615955;ACSN:21386996;ACSN:6321473;ACSN:8321321;Adhesome:10527887;Adhesome:2996780;HPRD-phos:2996780;HPRD:2996780;KEA:17570479;KEA:2136766;KEA:2996780;ProtMapper:2996780;SIGNOR:2996780;iPTMnet:2996780 Itgb1 Activator-PMID:Adhesome:10592173;Adhesome:11723131"
+      },
+      {
+        "Id": 3,
+        "Name": "Mapk14",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fyn Activator-PMID:KEA:15735648;ProtMapper:15735648;SIGNOR:15735648;iPTMnet:15735648"
+      },
+      {
+        "Id": 4,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk14 Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Fyn",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:Adhesome:16966330;Adhesome:19711372;Adhesome:9169421;KEA:17570479;SPIKE_LC:16966330 Prkca Activator-PMID:Adhesome:12721299 Itgb1 Activator-PMID:Adhesome:11684709"
+      },
+      {
+        "Id": 6,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 7,
+        "Name": "Nfe2l2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:NRF2ome:18802114;ProtMapper:27230643;ProtMapper:27233051;ProtMapper:29104732 Prkca Activator-PMID:KEA:12947090;KEA:17570479;NRF2ome:12198130;ProtMapper:12198130;SIGNOR:12198130;iPTMnet:12198130"
+      },
+      {
+        "Id": 8,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Nfe2l2 Unknown-PMID:SPIKE:10913165;SPIKE_LC:10913165",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 9,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 10,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 11,
+        "Name": "Prkca",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID:Adhesome:11284700;Adhesome:16628218;HPRD:11284700;SPIKE_LC:16628218"
+      },
+      {
+        "Id": 12,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 13,
+        "Name": "Itgb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Unknown-PMID:Baccin2019:25215932;CellTalkDB:10684262;Cellinker:10684262;HPRD:10684262;LRdb:10684262;connectomeDB2020:10684262"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Tgm2",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tp53",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Igf1r",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 6,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 7,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 8,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 9,
+        "FromVariable": 3,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 10,
+        "FromVariable": 3,
+        "ToVariable": 5,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Tp53",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Unknown-PMID:ProtMapper:16313886"
+      },
+      {
+        "Id": 2,
+        "Name": "Igf1r",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tp53 Inhibitor-PMID:ProtMapper:19738076"
+      },
+      {
+        "Id": 3,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Igf1r Activator-PMID:HPRD:8940173"
+      },
+      {
+        "Id": 4,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 41.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:HPRD:1379745;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hras",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk8",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcl12",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hif1a",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rb1",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 17,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 18,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 5,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 6,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 7,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 1,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 9,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 8,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 10,
+        "ToVariable": 11,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 11,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 1,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 12,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 11,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 13,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 14,
+        "ToVariable": 15,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 15,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 15,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 13,
+        "ToVariable": 16,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 16,
+        "ToVariable": 14,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 1475.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Plau Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Mapk8 Activator-PMID:HPRD-phos:10551811;HPRD-phos:1748630;HPRD-phos:18669648;HPRD-phos:18767875;HPRD-phos:19651622;HPRD-phos:20068231;HPRD:10551811;HPRD:1748630;KEA:10551811;KEA:11243879;KEA:15210690;KEA:1651323;KEA:17081983;KEA:1748630;KEA:91332050;ProtMapper:10551811;SIGNOR:10551811;SPIKE_LC:10551811;SPIKE_LC:16713569;iPTMnet:10551811;iPTMnet:1748630;iPTMnet:18669648;iPTMnet:18767875;iPTMnet:19651622;iPTMnet:20068231 Rb1 Inhibitor-PMID:BioGRID:7838535;HPRD:7838535"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcl12 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 6,
+        "Name": "Hras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Mixed-PMID:HPRD:11022048;InnateDB:11022048;NetPath:11022048;SIGNOR:11022047"
+      },
+      {
+        "Id": 7,
+        "Name": "Mapk8",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hras Activator-PMID:Adhesome:11525649;Adhesome:16810318;Adhesome:8137421;DIP:8137421;HPRD:11525649;HPRD:16810318;HPRD:8137421;SPIKE_LC:16713569"
+      },
+      {
+        "Id": 8,
+        "Name": "Cxcl12",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hif1a Activator-PMID: Fn1 Activator-PMID:HPRD:11023498"
+      },
+      {
+        "Id": 9,
+        "Name": "Hif1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:10551817;ProtMapper:18519666;ProtMapper:24099156;SIGNOR:18519666;SPIKE:10551817;SPIKE_LC:10551817;iPTMnet:18519666 Rb1 Activator-PMID:SPIKE:15674338;SPIKE_LC:15674338"
+      },
+      {
+        "Id": 10,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 40.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825"
+      },
+      {
+        "Id": 13,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 40.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 15,
+        "Name": "Rb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:HPRD:9315663;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 16,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fn1 Inhibitor-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hnf4a",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tp53",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hras",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcr4",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "F2",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpa",
+        "Id": 18,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 19,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 1,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 7,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 10,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 12,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 12,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 2,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 13,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 14,
+        "ToVariable": 6,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 6,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 6,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 1,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 8,
+        "ToVariable": 14,
+        "Type": "Activator"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 14,
+        "ToVariable": 15,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 15,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 16,
+        "ToVariable": 7,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 7,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 4,
+        "ToVariable": 16,
+        "Type": "Activator"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 17,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 9,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 9,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 45,
+        "FromVariable": 1,
+        "ToVariable": 18,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 46,
+        "FromVariable": 18,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 47,
+        "FromVariable": 4,
+        "ToVariable": 17,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 130.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Hras Unknown-PMID:ProtMapper:17922028 Plau Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 130.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Rac1 Activator-PMID: Tp53 Inhibitor-PMID:CollecTRI:11179471;CollecTRI:1400626;CollecTRI:16107691;CollecTRI:16980608;CollecTRI:19202062;CollecTRI:19411072;CollecTRI:8479742;CollecTRI:8741680;CollecTRI:9196053;CollecTRI:9632756;HTRIdb:16980608"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 156.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 41.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID: Plau Activator-PMID: Tp53 Unknown-PMID:"
+      },
+      {
+        "Id": 5,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 63.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 6,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Unknown-PMID:PhosphoSite:24043306;PhosphoSite:30062409;PhosphoSite:33417283 Hras Activator-PMID: Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 8,
+        "Name": "Hnf4a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Unknown-PMID:PhosphoSite:17317687;PhosphoSite:21708125;PhosphoSite:28196117"
+      },
+      {
+        "Id": 9,
+        "Name": "Tp53",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 37.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Unknown-PMID:ProtMapper:16313886"
+      },
+      {
+        "Id": 10,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcr4 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Hras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Mixed-PMID:HPRD:11022048;InnateDB:11022048;NetPath:11022048;SIGNOR:11022047"
+      },
+      {
+        "Id": 13,
+        "Name": "Cxcr4",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:CollecTRI:10229837;CollecTRI:11145693;DoRothEA:10229837 F2 Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hnf4a Activator-PMID:CollecTRI:10330009;CollecTRI:9927755",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 15,
+        "Name": "F2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:SIGNOR:17635716"
+      },
+      {
+        "Id": 16,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 104.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:HPRD:1379745;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 17,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 11.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpa Unknown-PMID: Src Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 18,
+        "Name": "Cebpa",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Inhibitor-PMID:KEA:14701740;PhosphoSite:14701740;PhosphoSite:20101026;PhosphoSite:26515730;ProtMapper:14701740;SIGNOR:14701740;iPTMnet:14701740;phosphoELM:14701740"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcl12",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Ifng",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rras",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Pik3ca",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Prkcd",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfkb1",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 18,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 1,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 6,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 1,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 7,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 6,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 9,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 5,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 12,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 13,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 13,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 13,
+        "ToVariable": 14,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 14,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 8,
+        "ToVariable": 15,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 15,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 15,
+        "ToVariable": 16,
+        "Type": "Activator"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 16,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 16,
+        "ToVariable": 9,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 10,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 17,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 17,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 17,
+        "ToVariable": 1,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 1475.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Pik3ca Inhibitor-PMID: Plau Activator-PMID: Nfkb1 Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Pik3ca Activator-PMID: Nfkb1 Activator-PMID:ACSN:18490439;ACSN:19219071;ACSN:2191300"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 93.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Cxcl12",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Ifng Activator-PMID: Fn1 Activator-PMID:HPRD:11023498"
+      },
+      {
+        "Id": 5,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcl12 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 6,
+        "Name": "Ifng",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID: Nfkb1 Activator-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825"
+      },
+      {
+        "Id": 8,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 9,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 41.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Ifng Activator-PMID: Prkcd Activator-PMID:ELM:8557034 Fn1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 10,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 55.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Rras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 13,
+        "Name": "Pik3ca",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 79.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rras Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Prkcd",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Pik3ca Activator-PMID:HPRD:11676480"
+      },
+      {
+        "Id": 15,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 16,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID:"
+      },
+      {
+        "Id": 17,
+        "Name": "Nfkb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 67.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcr4",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tp53",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rras",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Pik3ca",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk14",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "F2",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 18,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 19,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfkb1",
+        "Id": 20,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 21,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 2,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 5,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 1,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 6,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 1,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 10,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 8,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 4,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 12,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 13,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 13,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 13,
+        "ToVariable": 14,
+        "Type": "Activator"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 14,
+        "ToVariable": 8,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 7,
+        "ToVariable": 15,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 15,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 7,
+        "ToVariable": 16,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 16,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 15,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 17,
+        "ToVariable": 8,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 45,
+        "FromVariable": 18,
+        "ToVariable": 19,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 46,
+        "FromVariable": 19,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 47,
+        "FromVariable": 19,
+        "ToVariable": 14,
+        "Type": "Activator"
+      },
+      {
+        "Id": 48,
+        "FromVariable": 14,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 49,
+        "FromVariable": 9,
+        "ToVariable": 20,
+        "Type": "Activator"
+      },
+      {
+        "Id": 50,
+        "FromVariable": 20,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 51,
+        "FromVariable": 20,
+        "ToVariable": 1,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 140.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Pik3ca Inhibitor-PMID: Plau Activator-PMID: Nfkb1 Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Pik3ca Activator-PMID: Rac1 Activator-PMID: Nfkb1 Activator-PMID:ACSN:18490439;ACSN:19219071;ACSN:2191300"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcr4 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Cxcr4",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:CollecTRI:10229837;CollecTRI:11145693;DoRothEA:10229837 F2 Activator-PMID:"
+      },
+      {
+        "Id": 6,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 126.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825 Mapk14 Activator-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 126.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 8,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tp53 Activator-PMID:CollecTRI:10893263;CollecTRI:15578696;CollecTRI:17363498;CollecTRI:18064040;CollecTRI:21859835;CollecTRI:22154326;CollecTRI:22178888;CollecTRI:23527225;CollecTRI:23677569;CollecTRI:24098340;DoRothEA:21859835 Mapk14 Inhibitor-PMID:InnateDB:14970175;KEA:14970175;PhosphoSite:29414778;PhosphoSite:33176141;ProtMapper:14970175;SIGNOR:14970175;iPTMnet:14970175;phosphoELM:14970175 Fn1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 9,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 138.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 10,
+        "Name": "Tp53",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:10958792;InnateDB:10958792;PhosphoSite:10348343;PhosphoSite:10747897;PhosphoSite:11239457;PhosphoSite:12393879;PhosphoSite:17237827;PhosphoSite:18523266;PhosphoSite:24194938;PhosphoSite:25767119;PhosphoSite:28937686;PhosphoSite:9467949;PhosphoSite:9739174;ProtMapper:12955074;SIGNOR:12955074;SPIKE_LC:16713569;iPTMnet:10781582;iPTMnet:12955074"
+      },
+      {
+        "Id": 11,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Rras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 13,
+        "Name": "Pik3ca",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 76.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rras Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Mapk14",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Pik3ca Activator-PMID: Rac1 Activator-PMID:"
+      },
+      {
+        "Id": 15,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 138.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 16,
+        "Name": "F2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:SIGNOR:17635716"
+      },
+      {
+        "Id": 17,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID:"
+      },
+      {
+        "Id": 18,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 12.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 19,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 12.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 20,
+        "Name": "Nfkb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 164.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Serpina1a",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Lrp1",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk14",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fyn",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfe2l2",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fth1",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Prkca",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Itgb1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 14,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 15,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 16,
+        "FromVariable": 2,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 17,
+        "FromVariable": 5,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 18,
+        "FromVariable": 3,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 2,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 2,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 7,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 2,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 10,
+        "ToVariable": 11,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 12,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 12,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 12,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 9,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 13,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 13,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 13,
+        "ToVariable": 12,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Lrp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Activator-PMID:Baccin2019:862645615131125;CellTalkDB:8626456;Cellinker:15131125;Cellinker:8626456;HPRD:15131125;LRdb:151;LRdb:8626456;SIGNOR:8626456;connectomeDB2020:15131125;connectomeDB2020:8626456"
+      },
+      {
+        "Id": 2,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Lrp1 Activator-PMID:Adhesome:11854294;Adhesome:12789267;HPRD:11854294;HPRD:12789267 Prkca Mixed-PMID:ACSN:11313945;ACSN:11447289;ACSN:11940581;ACSN:12040186;ACSN:12845332;ACSN:14585353;ACSN:15567848;ACSN:16488589;ACSN:17496910;ACSN:19568798;ACSN:19615955;ACSN:21386996;ACSN:6321473;ACSN:8321321;Adhesome:10527887;Adhesome:2996780;HPRD-phos:2996780;HPRD:2996780;KEA:17570479;KEA:2136766;KEA:2996780;ProtMapper:2996780;SIGNOR:2996780;iPTMnet:2996780 Itgb1 Activator-PMID:Adhesome:10592173;Adhesome:11723131"
+      },
+      {
+        "Id": 3,
+        "Name": "Mapk14",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fyn Activator-PMID:KEA:15735648;ProtMapper:15735648;SIGNOR:15735648;iPTMnet:15735648"
+      },
+      {
+        "Id": 4,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk14 Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Fyn",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:Adhesome:16966330;Adhesome:19711372;Adhesome:9169421;KEA:17570479;SPIKE_LC:16966330 Prkca Activator-PMID:Adhesome:12721299 Itgb1 Activator-PMID:Adhesome:11684709"
+      },
+      {
+        "Id": 6,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 142.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 7,
+        "Name": "Nfe2l2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:NRF2ome:18802114;ProtMapper:27230643;ProtMapper:27233051;ProtMapper:29104732 Prkca Activator-PMID:KEA:12947090;KEA:17570479;NRF2ome:12198130;ProtMapper:12198130;SIGNOR:12198130;iPTMnet:12198130"
+      },
+      {
+        "Id": 8,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Nfe2l2 Unknown-PMID:SPIKE:10913165;SPIKE_LC:10913165",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 9,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 78.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 10,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 12,
+        "Name": "Prkca",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 52.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID:Adhesome:11284700;Adhesome:16628218;HPRD:11284700;SPIKE_LC:16628218 Itgb1 Activator-PMID:Adhesome:10592173;Adhesome:11700305;Adhesome:12138200;Adhesome:12435334;BioGRID:12138200;HPRD:12138200"
+      },
+      {
+        "Id": 13,
+        "Name": "Itgb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 90.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Unknown-PMID:Baccin2019:25215932;CellTalkDB:10684262;Cellinker:10684262;HPRD:10684262;LRdb:10684262;connectomeDB2020:10684262"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Tgm2",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tp53",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Igf1r",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 6,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 7,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 8,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 9,
+        "FromVariable": 3,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 10,
+        "FromVariable": 3,
+        "ToVariable": 5,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": "",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Tp53",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Unknown-PMID:ProtMapper:16313886"
+      },
+      {
+        "Id": 2,
+        "Name": "Igf1r",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tp53 Inhibitor-PMID:ProtMapper:19738076"
+      },
+      {
+        "Id": 3,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Igf1r Activator-PMID:HPRD:8940173"
+      },
+      {
+        "Id": 4,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 41.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 5,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:HPRD:1379745;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcl12",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Ifng",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpb",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Casp3",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hras",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfatc2",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Fn1",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Nfkb1",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 18,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 19,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 1,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 6,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 1,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 7,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 6,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 9,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 5,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 11,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 12,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 13,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 13,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 12,
+        "ToVariable": 14,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 14,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 8,
+        "ToVariable": 15,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 15,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 15,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 15,
+        "ToVariable": 16,
+        "Type": "Activator"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 16,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 16,
+        "ToVariable": 9,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 10,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 17,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 17,
+        "ToVariable": 6,
+        "Type": "Activator"
+      },
+      {
+        "Id": 45,
+        "FromVariable": 17,
+        "ToVariable": 1,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 176.000000,
+        "PositionY": 1475.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 126.000000,
+        "PositionY": 1415.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Plau Activator-PMID: Nfkb1 Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 164.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Mapk1 Activator-PMID:BioGRID:7957875;InnateDB:15210690;InnateDB:7957875;KEA:10551811;KEA:1651323;KEA:17081983;KEA:1748630;KEA:17570479;KEA:91332050;ProtMapper:15212693;ProtMapper:17251036;ProtMapper:27167001;ProtMapper:8386367;SIGNOR:8386367;iPTMnet:10551811;iPTMnet:1651323;phosphoELM:1651323 Nfkb1 Activator-PMID:ACSN:18490439;ACSN:19219071;ACSN:2191300"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 164.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Cxcl12",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Ifng Activator-PMID: Fn1 Activator-PMID:HPRD:11023498"
+      },
+      {
+        "Id": 5,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 76.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcl12 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 6,
+        "Name": "Ifng",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 1355.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID: Nfkb1 Activator-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Cebpb",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 138.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:15878863;KEA:12213825;KEA:15367685;KEA:16009338;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15212693;ProtMapper:15878863;ProtMapper:19327116;SIGNOR:19327116;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:12213825;iPTMnet:19327116;phosphoELM:12213825 Mapk1 Mixed-PMID:HPRD-phos:19413330;HPRD-phos:8384717;HPRD:8384717;KEA:12213825;KEA:15367685;KEA:16009338;KEA:17570479;KEA:8384717;ProtMapper:10995751;ProtMapper:12048245;ProtMapper:15878863;ProtMapper:19723873;ProtMapper:21980398;SIGNOR:19723873;SPIKE:19443782;SPIKE_LC:19443782;iPTMnet:19413330;iPTMnet:19723873;iPTMnet:8384717"
+      },
+      {
+        "Id": 8,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 138.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpb Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 9,
+        "Name": "Casp3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Ifng Activator-PMID: Nfatc2 Activator-PMID: Fn1 Inhibitor-PMID:"
+      },
+      {
+        "Id": 10,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Casp3 Activator-PMID:HPRD:10556977;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 76.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Hras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 76.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Mixed-PMID:HPRD:11022048;InnateDB:11022048;NetPath:11022048;SIGNOR:11022047"
+      },
+      {
+        "Id": 13,
+        "Name": "Mapk1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 88.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hras Activator-PMID:ProtMapper:17922028 Plau Activator-PMID:"
+      },
+      {
+        "Id": 14,
+        "Name": "Nfatc2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hras Activator-PMID:"
+      },
+      {
+        "Id": 15,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 114.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 16,
+        "Name": "Fn1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 91.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plau Activator-PMID:"
+      },
+      {
+        "Id": 17,
+        "Name": "Nfkb1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 12.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Tgm2 Activator-PMID:"
+      }
+    ],
+    "Containers": []
+  }
+}
+{
+  "Model": {
+    "Name": "Omnipath motif",
+    "Variables": [
+      {
+        "Name": "Fth1",
+        "Id": 0,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Mapk3",
+        "Id": 1,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Myc",
+        "Id": 2,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Agps",
+        "Id": 3,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Src",
+        "Id": 4,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Coro7",
+        "Id": 5,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plau",
+        "Id": 6,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rac1",
+        "Id": 7,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hnf4a",
+        "Id": 8,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tp53",
+        "Id": 9,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Rap2b",
+        "Id": 10,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cxcr4",
+        "Id": 11,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Serpina1a",
+        "Id": 12,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Sh3bp1",
+        "Id": 13,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Cebpa",
+        "Id": 14,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Tgm2",
+        "Id": 15,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Plce1",
+        "Id": 16,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "Hras",
+        "Id": 17,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      },
+      {
+        "Name": "F2",
+        "Id": 18,
+        "RangeFrom": 0,
+        "RangeTo": 2,
+        "Formula": ""
+      }
+    ],
+    "Relationships": [
+      {
+        "Id": 19,
+        "FromVariable": 0,
+        "ToVariable": 1,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 20,
+        "FromVariable": 1,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 21,
+        "FromVariable": 2,
+        "ToVariable": 3,
+        "Type": "Activator"
+      },
+      {
+        "Id": 22,
+        "FromVariable": 1,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 23,
+        "FromVariable": 7,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 24,
+        "FromVariable": 4,
+        "ToVariable": 5,
+        "Type": "Activator"
+      },
+      {
+        "Id": 25,
+        "FromVariable": 2,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 26,
+        "FromVariable": 11,
+        "ToVariable": 10,
+        "Type": "Activator"
+      },
+      {
+        "Id": 27,
+        "FromVariable": 1,
+        "ToVariable": 8,
+        "Type": "Activator"
+      },
+      {
+        "Id": 28,
+        "FromVariable": 8,
+        "ToVariable": 12,
+        "Type": "Activator"
+      },
+      {
+        "Id": 29,
+        "FromVariable": 4,
+        "ToVariable": 13,
+        "Type": "Activator"
+      },
+      {
+        "Id": 30,
+        "FromVariable": 1,
+        "ToVariable": 14,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 31,
+        "FromVariable": 14,
+        "ToVariable": 15,
+        "Type": "Activator"
+      },
+      {
+        "Id": 32,
+        "FromVariable": 10,
+        "ToVariable": 16,
+        "Type": "Activator"
+      },
+      {
+        "Id": 33,
+        "FromVariable": 16,
+        "ToVariable": 17,
+        "Type": "Activator"
+      },
+      {
+        "Id": 34,
+        "FromVariable": 17,
+        "ToVariable": 7,
+        "Type": "Activator"
+      },
+      {
+        "Id": 35,
+        "FromVariable": 7,
+        "ToVariable": 2,
+        "Type": "Activator"
+      },
+      {
+        "Id": 36,
+        "FromVariable": 2,
+        "ToVariable": 0,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 37,
+        "FromVariable": 17,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 38,
+        "FromVariable": 12,
+        "ToVariable": 6,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 39,
+        "FromVariable": 6,
+        "ToVariable": 1,
+        "Type": "Activator"
+      },
+      {
+        "Id": 40,
+        "FromVariable": 6,
+        "ToVariable": 4,
+        "Type": "Activator"
+      },
+      {
+        "Id": 41,
+        "FromVariable": 12,
+        "ToVariable": 18,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 42,
+        "FromVariable": 18,
+        "ToVariable": 11,
+        "Type": "Activator"
+      },
+      {
+        "Id": 43,
+        "FromVariable": 4,
+        "ToVariable": 15,
+        "Type": "Activator"
+      },
+      {
+        "Id": 44,
+        "FromVariable": 13,
+        "ToVariable": 7,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 45,
+        "FromVariable": 7,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 46,
+        "FromVariable": 9,
+        "ToVariable": 8,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 47,
+        "FromVariable": 15,
+        "ToVariable": 9,
+        "Type": "Activator"
+      },
+      {
+        "Id": 48,
+        "FromVariable": 9,
+        "ToVariable": 2,
+        "Type": "Inhibitor"
+      },
+      {
+        "Id": 49,
+        "FromVariable": 9,
+        "ToVariable": 4,
+        "Type": "Activator"
+      }
+    ]
+  },
+  "Layout": {
+    "Variables": [
+      {
+        "Id": 0,
+        "Name": "Fth1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 103.000000,
+        "PositionY": 1295.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Inhibitor-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 1,
+        "Name": "Mapk3",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 141.000000,
+        "PositionY": 1235.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Fth1 Inhibitor-PMID: Hras Unknown-PMID:ProtMapper:17922028 Plau Activator-PMID:"
+      },
+      {
+        "Id": 2,
+        "Name": "Myc",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 103.000000,
+        "PositionY": 1175.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Activator-PMID:HPRD:9155018;InnateDB:15210690;SIGNOR:32482868;SignaLink3:15210690;SignaLink3:18463697;SignaLink3:18988627;SignaLink3:21071413;SignaLink3:23331499;SignaLink3:9155018 Rac1 Activator-PMID: Tp53 Inhibitor-PMID:CollecTRI:11179471;CollecTRI:1400626;CollecTRI:16107691;CollecTRI:16980608;CollecTRI:19202062;CollecTRI:19411072;CollecTRI:8479742;CollecTRI:8741680;CollecTRI:9196053;CollecTRI:9632756;HTRIdb:16980608"
+      },
+      {
+        "Id": 3,
+        "Name": "Agps",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 50.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:SPIKE_LC:17093053",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 4,
+        "Name": "Src",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 170.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID: Plau Activator-PMID: Tp53 Unknown-PMID:"
+      },
+      {
+        "Id": 5,
+        "Name": "Coro7",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 146.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:PhosphoSite:18581049;ProtMapper:18581049",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 6,
+        "Name": "Plau",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 184.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:"
+      },
+      {
+        "Id": 7,
+        "Name": "Rac1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 117.000000,
+        "PositionY": 875.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Unknown-PMID:PhosphoSite:24043306;PhosphoSite:30062409;PhosphoSite:33417283 Hras Activator-PMID: Sh3bp1 Inhibitor-PMID:HPRD:10508610;SIGNOR:32203420;SPIKE_LC:16189514"
+      },
+      {
+        "Id": 8,
+        "Name": "Hnf4a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 635.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Unknown-PMID:PhosphoSite:17317687;PhosphoSite:21708125;PhosphoSite:28196117 Tp53 Inhibitor-PMID:CollecTRI:11818510;CollecTRI:16895524;DoRothEA:16895524;HTRIdb:16895524"
+      },
+      {
+        "Id": 9,
+        "Name": "Tp53",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 38.000000,
+        "PositionY": 695.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rac1 Activator-PMID: Tgm2 Unknown-PMID:ProtMapper:16313886"
+      },
+      {
+        "Id": 10,
+        "Name": "Rap2b",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 79.000000,
+        "PositionY": 1055.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cxcr4 Activator-PMID:",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 11,
+        "Name": "Cxcr4",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 91.000000,
+        "PositionY": 1115.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Myc Activator-PMID:CollecTRI:10229837;CollecTRI:11145693;DoRothEA:10229837 F2 Activator-PMID:"
+      },
+      {
+        "Id": 12,
+        "Name": "Serpina1a",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 26.000000,
+        "PositionY": 575.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Hnf4a Activator-PMID:CollecTRI:10330009;CollecTRI:9927755",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 13,
+        "Name": "Sh3bp1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 64.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Src Unknown-PMID:HPRD:1379745;SPIKE_LC:16189514",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 14,
+        "Name": "Cebpa",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 129.000000,
+        "PositionY": 815.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Mapk3 Inhibitor-PMID:KEA:14701740;PhosphoSite:14701740;PhosphoSite:20101026;PhosphoSite:26515730;ProtMapper:14701740;SIGNOR:14701740;iPTMnet:14701740;phosphoELM:14701740"
+      },
+      {
+        "Id": 15,
+        "Name": "Tgm2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 105.000000,
+        "PositionY": 755.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Cebpa Unknown-PMID: Src Unknown-PMID:KEA:17570479",
+        "Fill": "BMA_Green"
+      },
+      {
+        "Id": 16,
+        "Name": "Plce1",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 79.000000,
+        "PositionY": 995.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Rap2b Activator-PMID:"
+      },
+      {
+        "Id": 17,
+        "Name": "Hras",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 91.000000,
+        "PositionY": 935.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Plce1 Mixed-PMID:HPRD:11022048;InnateDB:11022048;NetPath:11022048;SIGNOR:11022047"
+      },
+      {
+        "Id": 18,
+        "Name": "F2",
+        "Type": "Constant",
+        "ContainerId": 0,
+        "PositionX": 0.000000,
+        "PositionY": 515.000000,
+        "CellX": 0,
+        "CellY": 0,
+        "Angle": 0,
+        "Description": " Serpina1a Inhibitor-PMID:SIGNOR:17635716"
+      }
+    ],
+    "Containers": []
+  }
+}
