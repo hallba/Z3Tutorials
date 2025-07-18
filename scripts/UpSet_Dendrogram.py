@@ -1,41 +1,43 @@
+import json
 import pandas as pd
-from upsetplot import UpSet 
-import matplotlib.pyplot as plt 
-import numpy as np 
-from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.spatial.distance import pdist, squareform
+import matplotlib.pyplot as plt
+from upsetplot import UpSet, from_indicators
 
+# Load the JSON file (array of graphs)
+with open("graphs.json", "r") as f:
+    graphs = json.load(f)
 
-#Load CSV summary file 
-csv_path = "full_output_summary.csv"
-df = pd.read_csv(csv_path )
+# Initialize containers
+network_gene_sets = []
 
-# Extract gene list from the 'Genes' column (separated by semicolons)
-gene_sets = df['Genes'].apply(lambda x: set(str(x).split(";")))
+# Loop through each graph
+for graph in graphs:
+    # Extract all gene names from "Model" -> "Variables" -> "Name"
+    gene_names = set(var["Name"] for var in graph["Model"]["Variables"])
+    network_gene_sets.append(gene_names)
 
-# Build binary df indicating presence of each gene in each graph 
-all_genes = set().union(*gene_sets)
-binary_matrix = pd.DataFrame(
-    [{gene: (gene in gs) for gene in all_genes} for gs in gene_sets], 
-    index = [f"Graph_{i}" for i in range(len(gene_sets))]
-)
+# Get all unique genes across all graphs
+all_genes = sorted(set.union(*network_gene_sets))
 
-# UpSet plot
-upset = UpSet(binary_matrix, subset_size = "count", show_counts = "%d")
+# Build presence/absence matrix (1 = present, 0 = absent)
+matrix = []
+for gene_set in network_gene_sets:
+    row = [1 if gene in gene_set else 0 for gene in all_genes]
+    matrix.append(row)
+
+# Build DataFrame 
+df = pd.DataFrame(matrix, columns=all_genes)
+
+# Convert numeric 0/1 to boolean True/False
+bool_df = df.astype(bool)
+
+# Convert to UpSet-compatible format
+upset_data = from_indicators(bool_df.columns, bool_df)
+
+# Set smaller figure size
+plt.figure(figsize=(10, 10))
+
+# Create and plot UpSet plot
+upset = UpSet(upset_data, subset_size="count", show_percentages=True)
 upset.plot()
-
-plt.title("UpSet plot of shared genes across graphs")
-plt.show()
-
-# Create distance matrix and create dendrogram 
-
-#Hierarchical clustering 
-linkage_matrix = linkage(binary_matrix, method = "ward")
-
-# Plot dendrogram
-plt.figure(figsize=(14, 6))
-dendrogram(linkage_matrix, labels=binary_matrix.index, leaf_rotation=90)
-plt.title("Dendrogram of Graphs Based on Gene Set Similarity")
-plt.ylabel("Distance")
-plt.tight_layout()
 plt.show()
