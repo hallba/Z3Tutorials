@@ -1413,18 +1413,34 @@ module IOSummary =
 
         File.WriteAllText(filenameCsv, sb.ToString())
 
-
+    /// Loads a list of genes from the first column of the CSV files
+    let loadGeneListFromCsv (path: string) = 
+        File.ReadLines(path)    // Read file line 
+        |> Seq.skip 1          // Skip the header row 
+        |> Seq.map (fun line -> 
+            let cols = line.Split(',')
+            if cols.Length > 1 then cols.[1].Trim() else "")  // Take second column (index 1)   
+        |> Seq.toList                  // Convert the sequence into a list 
 open IOSummary 
 
 module Main =
     let outputAsync = async {
+        
+        //Load genes from the CSV files
+        let mouseRNAseq = loadGeneListFromCsv "HSC_overlap_mouseRNAseq_final_consitent.csv"
+        let humanfinalConsistent = loadGeneListFromCsv "human_overlap_final_consitent.csv"
+        let humanRAGEReceptors = loadGeneListFromCsv "human_overlap_RAGEreceptors.csv"     
 
-        // Run all graphs for full mouseGenesMonika asynchronously 
+        let joinedGenes = String.concat ", " humanRAGEReceptors
+        printfn "%s" joinedGenes
+
+        
+        (* // Run all graphs for full mouseGenesMonika asynchronously 
         let! outputs = runAllWithGenes mouseGenesMonika
 
         // Write the CSV summary with compressed BMA strings 
         writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
-        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
+        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)."  *)
     }
 
     outputAsync |> Async.RunSynchronously 
