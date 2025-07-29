@@ -1,4 +1,4 @@
-{
+[{
   "Model": {
     "Name": "Omnipath motif",
     "Variables": [
@@ -183,7 +183,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -563,7 +563,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -918,7 +918,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -1086,7 +1086,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -1253,7 +1253,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -1633,7 +1633,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -1913,7 +1913,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -2099,7 +2099,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -2510,7 +2510,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -2921,7 +2921,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -3170,7 +3170,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -3580,7 +3580,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -3991,7 +3991,7 @@
     ],
     "Containers": []
   }
-}
+}, 
 {
   "Model": {
     "Name": "Omnipath motif",
@@ -4401,4 +4401,4 @@
     ],
     "Containers": []
   }
-}
+}]

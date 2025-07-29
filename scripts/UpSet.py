@@ -28,8 +28,18 @@ def plot_upset(df: pd.DataFrame, figsize=(10, 10)):
     """Plot an UpSet diagram from a boolean presence/absence DataFrame."""
     upset_data = from_indicators(df.columns, df)
     plt.figure(figsize=figsize)
+
+    # Plot UpSet
     upset = UpSet(upset_data, subset_size="count", show_percentages=True)
     upset.plot()
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
+
+    # Reduce the top and bottom margins
+    plt.subplots_adjust(left=0.1, right=0.9, top=0.95, bottom=0)  # Reduced top and bottom margins
+
+    # Show the plot 
     plt.show()
 
 # Plot Upset Graphs
