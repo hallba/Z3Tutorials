@@ -1591,17 +1591,46 @@ let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode
 
     loop initialClusters
 
+open Z3optimisedDendogram
+open GeneSimilarityMatrix
+
+let processGraphFile (filePath: string) =
+    printfn $"Processing {filePath} ..."
+    let geneEdgeMappings = extractGeneToEdgeMappings filePath
+    let similarityMatrix = generateSimilarityMatrix geneEdgeMappings
+    let dendrogram = buildDendrogram similarityMatrix
+    // Return file and dendrogram for later use
+    filePath, dendrogram
+
+let graphFiles = 
+    [ "graphs.json"
+      "graphs_human_overlap_RAGEreceptors.json"
+      "graphs_HSC_overlap_mouseRNAseq_final_consistent.json"
+      "graphs_human_humanfinalConsistent.json" ]
+
+// Generate dendrograms from graphs
+let dendrograms =
+    graphFiles
+    |> List.map processGraphFile
+
+// Example use case: print gene count in each dendrogram leaf cluster root
+dendrograms
+|> List.iter (fun (file, dendro) ->
+    let genesInCluster = flatten dendro |> Set.count
+    printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
+)
+
 module Main =
     let outputAsync = async {
         
-        (*// Run all graphs for humanRAGEREceptors asynchronously
+        // Run all graphs for humanRAGEREceptors asynchronously
         
         let humanRAGEReceptors = loadGeneArrayFromCsv "human_overlap_RAGEreceptors.csv"
         let! outputs_humanRAGEReceptors = runAllWithGenes humanRAGEReceptors
 
         // Write the CSV summary with compressed BMA strings for human_overlap_RAGEreceptors gene list 
         writeGraphOutputCsvWithJsonReference "full_output_summary_human_overlap_RAGEreceptors.csv" "graphs_human_overlap_RAGEreceptors.json" outputs_humanRAGEReceptors
-        printfn " CSV summary written to 'full_output_summary_human_overlap_RAGEreceptors.csv' "*)
+        printfn " CSV summary written to 'full_output_summary_human_overlap_RAGEreceptors.csv' "
 
         // Run all graphs for mouseRNAseq asynchronously
         
@@ -1609,67 +1638,27 @@ module Main =
         let! outputs_mouseRNAseq = runAllWithGenes overlap_human_mouseRNAseq
 
         // Write the CSV summary with compressed BMA strings for mouseRNAseq gene list 
-        writeGraphOutputCsvWithJsonReference "full_output_summary_HSC_overlap_mouseRNAseq_final_consistent.csv" "graphs_HSC_overlap_mouseRNAseq_final_consistent.json" outputs_mouseRNAseq
+        writeGraphOutputCsvWithJsonReference "full_output_summary_HSC_overlap_mouseRNAseq_final_consistent.csv" "graphs_HSC_overlap_mouseRNAseq_final_consistent.json" outputs_mouseRNAseq 
         printfn " CSV summary written to 'full_output_summary_HSC_overlap_mouseRNAseq_final_consistent.csv' "
         
         // Run all graphs for humanfinalConsistent asynchronously
         
-        let humanfinalConsistent = loadGeneArrayFromCsv "human_overlap_final_consitent.csv"
+        let humanfinalConsistent = loadGeneArrayFromCsv "human_overlap_final_consistent.csv"
         let! outputs_humanfinalConsistent = runAllWithGenes humanfinalConsistent
 
         // Write the CSV summary with compressed BMA strings for humanfinalConsistent gene list 
         writeGraphOutputCsvWithJsonReference "full_output_summary_humanfinalConsistent.csv" "graphs_human_humanfinalConsistent.json" outputs_humanfinalConsistent
         printfn " CSV summary written to 'full_output_summary_human_humanfinalConsistent.csv' "
 
-        (*// Run all graphs for mouseGenesMonika asynchronously 
+        // Run all graphs for mouseGenesMonika asynchronously 
         let! outputs = runAllWithGenes mouseGenesMonika
 
         // Write the CSV summary with compressed BMA strings 
         writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
-        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)."*)
+        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
+
     }
 
     outputAsync |> Async.RunSynchronously 
 
-    
 open Main 
-
-//testCode
-(*let testExport = async {
-    let testGenes = [| "Agps"; "Ftl1"; "Tgm2" |]
-
-    let config = {
-        defaultInput with
-            database = Pathways
-            source = Mouse
-            includeSelfLoops = false
-            oneDirection = true
-            maximiseEdges = false
-            strictFilter = true
-            genesSource = FromArray testGenes
-    }
-
-    let! resultOpt = asyncWithTimeout 60000 (async {
-        return! Async.AwaitTask(Task.Run(fun () -> main config))
-    })
-
-    match resultOpt with
-    | Some (Some summary) ->
-        let rawJson = makeGraphInternal summary.Graph
-        let compressed = compressToBase64 rawJson
-        let output: GraphOutput = {
-            Graph = compressed
-            Summary = summary
-        }
-
-        // Call the CSV writer
-        writeGraphOutputCsvWithJsonReference "test_output.csv" "testgraphs_outputs.json" [output]
-        printfn "✅ Test graph written to test_output.csv and json file testgraphs_outputs.json createds"
-    | Some None ->
-        printfn "⚠️ main returned None – no graph generated."
-    | None ->
-        printfn "⏱️ Timeout – main took too long."
-}
-
-testExport |> Async.RunSynchronously
-*)
