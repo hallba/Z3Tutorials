@@ -1165,7 +1165,7 @@ module GraphRunner =
         let timeoutMs = 1000000 // Set timeout per config (in milliseconds)
 
         // Iterate through all configurations
-        for i, conf in allOptions |> List.mapi (fun i c -> (i, c)) do
+        for i, (conf: MainInput) in allOptions |> List.mapi (fun i c -> (i, c)) do
             // Inject current gene list into config
             let configWithGenes = { conf with genesSource = FromArray genes }
 
@@ -1425,6 +1425,7 @@ module IOSummary =
             |> Seq.toArray                                  // Convert the final filtered sequence into an array
 open IOSummary 
 
+
 module Z3optimisedDendogram = 
     
     // Mapping of a gene to the set of edges it participates in within a specific graph 
@@ -1433,38 +1434,92 @@ module Z3optimisedDendogram =
         Gene:string 
         Edges: Set<string * string> // (source, target)
     }
+    type BmaVariable = {
+        id: int
+        name: string
+        x: float
+        y: float
+        formula: string
+        granularity: int
+        description: string
+    }
 
-    // Parses a raw JSOn graph string to extract the set of edges as (source,target) tuples
-    let extractEdgesFromJson (jsonStr: string): Set<string * string> = 
-        let doc = JsonDocument.Parse(jsonStr)
-        let model = doc.RootElement.GetProperty("Model")
-        let edges = model.GetProperty("Edges")
-        seq {
-            for edge in edges.EnumerateArray() do 
-                let src = edge.GetProperty("Source").GetString()
-                let tgt = edge.GetProperty("Target").GetString()
-                if src <> null && tgt <> null then yield (src, tgt)
-        } |> Set.ofSeq
+    type BmaRelationship = {
+        id: int
+        source: int
+        target: int
+        kind: string
+    }
+
+    type Model = {
+        Name: string
+        Variables: BmaVariable list
+        Relationships: BmaRelationship list
+    }
+
+    type Layout = {
+        Variables: BmaVariable list
+        Containers: obj list  // empty list in your JSON, so deserializes fine
+    }
+
+    type GraphOutput = {
+        Model: Model
+        Layout: Layout
+    }
+
+    // Given a Model with Variables and Relationships, extract edges as (sourceGene, targetGene) pairs
+    let extractEdgesFromModel (model: Model) : Set<string * string> =
+        // Create a lookup dictionary from variable ID to variable name
+        let idToName = 
+            model.Variables
+            |> Seq.map (fun v -> (v.id, v.name))
+            |> dict
+
+        // Map each relationship's FromVariable and ToVariable IDs to names and collect edges
+        model.Relationships
+        |> Seq.choose (fun rel ->
+            match idToName.TryGetValue(rel.source), idToName.TryGetValue(rel.target) with
+            | (true, src), (true, tgt) -> Some (src, tgt)
+            | _ -> None // If any ID is missing, skip this edge
+        )
+        |> Set.ofSeq
+
+
+    
+
 
     // Load and parse the JSON file containing many graphs and returns a list of GeneEdgeMappings
     // for every gene in each graph, listing all edges involving that gene  
+
     let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
+        // Read entire JSON content from file
         let json = File.ReadAllText(filePath)
         let options = JsonSerializerOptions()
         options.PropertyNameCaseInsensitive <- true
-        // Deserialise JSON into list of GraphOutput records
+
+        // Deserialize JSON into a list of GraphOutput records
         let graphs: GraphOutput list = JsonSerializer.Deserialize<GraphOutput list>(json, options)
-        
+
+        // For each graph in the list (with index)
         graphs
-        |> List.mapi (fun i graph ->
-            let edges = extractEdgesFromJson graph.Graph
+        |> List.mapi (fun i (graph: GraphOutput) ->
+            // Access the Model object directly (already deserialized)
+            let model = graph.Model
+
+            // Defensive check: Model should not be null or empty
+            if obj.ReferenceEquals(model, null) then
+                failwithf "Model is null at index %d" i
+
+            // Extract edges from the Model (pass the object, not JSON string)
+            let edges = extractEdgesFromModel model
+
             // Collect all unique genes involved in any edge
             let genes =
                 edges
                 |> Seq.collect (fun (src, tgt) -> [src; tgt])
                 |> Set.ofSeq
 
-            // For each gene, create a GeneEdgeMapping containing all edges involving it 
+            // For each gene, create a GeneEdgeMapping containing all edges involving it
             genes
             |> Set.toList
             |> List.map (fun gene ->
@@ -1474,6 +1529,7 @@ module Z3optimisedDendogram =
                 { GraphId = i; Gene = gene; Edges = relatedEdges })
         )
         |> List.concat
+
 
 module GeneSimilarityMatrix =
 
@@ -1592,6 +1648,7 @@ let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode
 open Z3optimisedDendogram
 open GeneSimilarityMatrix
 
+
 // Process a single graph file: extract the mappings, compute similarity, build dendrogram
 let processGraphFile (filePath: string) =
     printfn $"Processing {filePath} ..."
@@ -1622,7 +1679,7 @@ let graphFiles =
     
 
 module Main =
-    let outputAsync = async {
+    (*let outputAsync = async {
         
         // Run all graphs for humanRAGEREceptors asynchronously
         
@@ -1658,7 +1715,7 @@ module Main =
         writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
         printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
 
-    }
+    }*)
     // Process and print dendrograms 
     let dendrograms = processGraphFiles graphFiles
     printDendrogramSummaries dendrograms
@@ -1666,4 +1723,4 @@ module Main =
 
 open Main 
 
-outputAsync |> Async.RunSynchronously 
+//outputAsync |> Async.RunSynchronously 
