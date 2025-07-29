@@ -32,41 +32,16 @@ def plot_upset(df: pd.DataFrame, figsize=(10, 10)):
     upset.plot()
     plt.show()
 
-# Load the JSON file (array of graphs)
-with open("graphs.json", "r") as f:
-    graphs = json.load(f)
+# Plot Upset Graphs
 
-# Initialize containers
-network_gene_sets = []
+df_1 = load_gene_presence_matrix("graphs.json")
+plot_upset(df_1)
 
-# Loop through each graph
-for graph in graphs:
-    # Extract all gene names from "Model" -> "Variables" -> "Name"
-    gene_names = set(var["Name"] for var in graph["Model"]["Variables"])
-    network_gene_sets.append(gene_names)
+df_2 = load_gene_presence_matrix("graphs_human_overlap_RAGEreceptors.json")
+plot_upset(df_2)
 
-# Get all unique genes across all graphs
-all_genes = sorted(set.union(*network_gene_sets))
+df_3 = load_gene_presence_matrix("graphs_HSC_overlap_mouseRNAseq_final_consistent.json")
+plot_upset(df_3)
 
-# Build presence/absence matrix (1 = present, 0 = absent)
-matrix = []
-for gene_set in network_gene_sets:
-    row = [1 if gene in gene_set else 0 for gene in all_genes]
-    matrix.append(row)
-
-# Build DataFrame 
-df = pd.DataFrame(matrix, columns=all_genes)
-
-# Convert numeric 0/1 to boolean True/False
-bool_df = df.astype(bool)
-
-# Convert to UpSet-compatible format
-upset_data = from_indicators(bool_df.columns, bool_df)
-
-# Set smaller figure size
-plt.figure(figsize=(10, 10))
-
-# Create and plot UpSet plot
-upset = UpSet(upset_data, subset_size="count", show_percentages=True)
-upset.plot()
-plt.show()
+df_4 = load_gene_presence_matrix("graphs_human_humanfinalConsistent.json")
+plot_upset(df_4)

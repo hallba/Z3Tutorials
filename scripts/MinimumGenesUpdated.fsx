@@ -1119,7 +1119,7 @@ module GeneGraph =
             //for maxEdges in [true; false] do
             for strictFilter in [true; false] do
             for db in [PPI; Regulon; PTM; MiRNA; Pathways; Combo] do
-            //for source in [Human; Mouse; Rat] do
+            for source in [Human; Mouse; Rat] do
                 yield {
                     defaultInput with
                         includeSelfLoops = false
@@ -1127,7 +1127,7 @@ module GeneGraph =
                         maximiseEdges = false
                         strictFilter = strictFilter
                         database = db
-                        source = Mouse
+                        source = source
                 }
         ]
 
@@ -1414,33 +1414,219 @@ module IOSummary =
         File.WriteAllText(filenameCsv, sb.ToString())
 
     /// Loads a list of genes from the first column of the CSV files
-    let loadGeneListFromCsv (path: string) = 
-        File.ReadLines(path)    // Read file line 
-        |> Seq.skip 1          // Skip the header row 
-        |> Seq.map (fun line -> 
-            let cols = line.Split(',')
-            if cols.Length > 1 then cols.[1].Trim() else "")  // Take second column (index 1)   
-        |> Seq.toList                  // Convert the sequence into a list 
+    let loadGeneArrayFromCsv (path: string) =
+            File.ReadLines(path)                            // Lazily read all lines from the CSV file
+            |> Seq.skip 1                                   // Skip the header row (usually the first line)
+            |> Seq.choose (fun line ->
+                // Determine the delimiter based on the line content (semicolon or comma)
+                let cols = 
+                    if line.Contains(";") then line.Split(';')
+                    else line.Split(',')
+
+                if cols.Length > 1 then
+                    // Take the second column (index 1), trim whitespace, and remove any surrounding quotes
+                    let gene = cols.[1].Trim().Replace("\"", "")
+                    // Only include non-empty, non-whitespace entries
+                    if not (String.IsNullOrWhiteSpace(gene)) then
+                        Some gene
+                    else None
+                else None)                                  // Skip lines that don’t have at least two columns
+            |> Seq.toArray                                  // Convert the final filtered sequence into an array
 open IOSummary 
+
+module Z3optimisedDendogram = 
+    type GeneEdgeMapping = {
+        GraphId: int 
+        Gene:string 
+        Edges: Set<string * string> // (source, target)
+    }
+
+    let extractEdgesFromJson (jsonStr: string): Set<string * string> = 
+        let doc = JsonDocument.Parse(jsonStr)
+        let model = doc.RootElement.GetProperty("Model")
+        let edges = model.GetProperty("Edges")
+        seq {
+            for edge in edges.EnumerateArray() do 
+                let src = edge.GetProperty("Source").GetString()
+                let tgt = edge.GetProperty("Target").GetString()
+                if src <> null && tgt <> null then yield (src, tgt)
+        } |> Set.ofSeq
+
+    // Load and parse all graphs.json entries
+    let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
+        let json = File.ReadAllText(filePath)
+        let options = JsonSerializerOptions()
+        options.PropertyNameCaseInsensitive <- true
+        let graphs: GraphOutput list = JsonSerializer.Deserialize<GraphOutput list>(json, options)
+
+        graphs
+        |> List.mapi (fun i graph ->
+            let edges = extractEdgesFromJson graph.Graph
+            let genes =
+                edges
+                |> Seq.collect (fun (src, tgt) -> [src; tgt])
+                |> Set.ofSeq
+
+            genes
+            |> Set.toList
+            |> List.map (fun gene ->
+                let relatedEdges =
+                    edges
+                    |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
+                { GraphId = i; Gene = gene; Edges = relatedEdges })
+        )
+        |> List.concat
+
+module GeneSimilarityMatrix =
+
+    open Z3optimisedDendogram
+
+    /// Merges edge sets for each unique gene across all graphs
+    let mergeGeneEdges (geneEdgeMaps: GeneEdgeMapping list) : Map<string, Set<string * string>> =
+        geneEdgeMaps
+        |> List.groupBy (fun m -> m.Gene)
+        |> Map.ofList
+        |> Map.map (fun _ mappings ->
+            mappings
+            |> List.map (fun m -> m.Edges)
+            |> Set.unionMany
+        )
+
+    /// Computes pairwise Jaccard similarity between all unique gene pairs
+    let computeJaccardSimilarityMatrix (mergedEdges: Map<string, Set<string * string>>) : Map<string * string, float> =
+        let genes = Map.keys mergedEdges |> Seq.toArray
+        [
+            for i = 0 to genes.Length - 1 do
+                for j = i + 1 to genes.Length - 1 do
+                    let g1, g2 = genes[i], genes[j]
+                    let e1, e2 = mergedEdges[g1], mergedEdges[g2]
+                    let inter = Set.intersect e1 e2 |> Set.count
+                    let union = Set.union e1 e2 |> Set.count
+                    let score = if union = 0 then 0.0 else float inter / float union
+                    yield ((g1, g2), score)
+        ]
+        |> Map.ofList
+
+    /// Convenience wrapper for full pipeline
+    let generateSimilarityMatrix (geneEdgeMaps: GeneEdgeMapping list) : Map<string * string, float> =
+        geneEdgeMaps
+        |> mergeGeneEdges
+        |> computeJaccardSimilarityMatrix
+
+type DendroNode =
+    | Leaf of string
+    | Merge of DendroNode * DendroNode * float
+
+/// Flatten a dendrogram node to get all gene names inside it
+let rec flatten node =
+    match node with
+    | Leaf g -> Set.singleton g
+    | Merge (l, r, _) -> Set.union (flatten l) (flatten r)
+
+/// Main function to build a dendrogram from a similarity matrix
+let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode =
+    
+    // Create initial map of cluster ID -> DendroNode (Leaf nodes)
+    let initialClusters =
+        similarityMatrix
+        |> Map.toSeq
+        |> Seq.collect (fun ((g1, g2), _) -> [g1; g2])
+        |> Seq.distinct
+        |> Seq.map (fun g -> g, Leaf g)
+        |> Map.ofSeq
+
+    /// Compute similarity between two gene sets (average linkage)
+    let clusterSimilarity (s1: Set<string>) (s2: Set<string>) =
+        [ for g1 in s1 do
+            for g2 in s2 do
+                if g1 <> g2 then
+                    match similarityMatrix.TryFind (g1, g2) with
+                    | Some sim -> yield sim
+                    | None ->
+                        match similarityMatrix.TryFind (g2, g1) with
+                        | Some sim -> yield sim
+                        | None -> ()
+        ]
+        |> function
+            | [] -> -1.0 // no similarity found, assign lowest
+            | sims -> sims |> List.average
+
+    /// Recursive clustering loop
+    let rec loop (clusters: Map<string, DendroNode>) : DendroNode =
+        if Map.count clusters = 1 then
+            // Done: return the single remaining cluster
+            clusters |> Seq.head |> fun kvp -> kvp.Value
+        else
+            // Generate all unique cluster pairs
+            let clusterList = Map.toList clusters
+            let clusterPairs =
+                [ for i in 0 .. clusterList.Length - 2 do
+                    for j in i + 1 .. clusterList.Length - 1 do
+                        yield (clusterList[i], clusterList[j]) ]
+
+            // Score each pair by computing similarity between their flattened gene sets
+            let scoredPairs =
+                clusterPairs
+                |> List.map (fun ((id1, n1), (id2, n2)) ->
+                    let s1, s2 = flatten n1, flatten n2
+                    let score = clusterSimilarity s1 s2
+                    ((id1, n1), (id2, n2), score))
+
+            // Pick the most similar pair
+            let ((idA, nA), (idB, nB), sim) = scoredPairs |> List.maxBy (fun (_, _, s) -> s)
+
+            // Merge them into a new node
+            let newNode = Merge(nA, nB, sim)
+            let newId = idA + "+" + idB
+
+            // Update cluster map
+            let newClusters =
+                clusters
+                |> Map.remove idA
+                |> Map.remove idB
+                |> Map.add newId newNode
+
+            // Repeat with new cluster map
+            loop newClusters
+
+    loop initialClusters
 
 module Main =
     let outputAsync = async {
         
-        //Load genes from the CSV files
-        let mouseRNAseq = loadGeneListFromCsv "HSC_overlap_mouseRNAseq_final_consitent.csv"
-        let humanfinalConsistent = loadGeneListFromCsv "human_overlap_final_consitent.csv"
-        let humanRAGEReceptors = loadGeneListFromCsv "human_overlap_RAGEreceptors.csv"     
-
-        let joinedGenes = String.concat ", " humanRAGEReceptors
-        printfn "%s" joinedGenes
-
+        (*// Run all graphs for humanRAGEREceptors asynchronously
         
-        (* // Run all graphs for full mouseGenesMonika asynchronously 
+        let humanRAGEReceptors = loadGeneArrayFromCsv "human_overlap_RAGEreceptors.csv"
+        let! outputs_humanRAGEReceptors = runAllWithGenes humanRAGEReceptors
+
+        // Write the CSV summary with compressed BMA strings for human_overlap_RAGEreceptors gene list 
+        writeGraphOutputCsvWithJsonReference "full_output_summary_human_overlap_RAGEreceptors.csv" "graphs_human_overlap_RAGEreceptors.json" outputs_humanRAGEReceptors
+        printfn " CSV summary written to 'full_output_summary_human_overlap_RAGEreceptors.csv' "*)
+
+        // Run all graphs for mouseRNAseq asynchronously
+        
+        let overlap_human_mouseRNAseq = loadGeneArrayFromCsv "HSC_overlap_mouseRNAseq_final_consistent.csv"
+        let! outputs_mouseRNAseq = runAllWithGenes overlap_human_mouseRNAseq
+
+        // Write the CSV summary with compressed BMA strings for mouseRNAseq gene list 
+        writeGraphOutputCsvWithJsonReference "full_output_summary_HSC_overlap_mouseRNAseq_final_consistent.csv" "graphs_HSC_overlap_mouseRNAseq_final_consistent.json" outputs_mouseRNAseq
+        printfn " CSV summary written to 'full_output_summary_HSC_overlap_mouseRNAseq_final_consistent.csv' "
+        
+        // Run all graphs for humanfinalConsistent asynchronously
+        
+        let humanfinalConsistent = loadGeneArrayFromCsv "human_overlap_final_consitent.csv"
+        let! outputs_humanfinalConsistent = runAllWithGenes humanfinalConsistent
+
+        // Write the CSV summary with compressed BMA strings for humanfinalConsistent gene list 
+        writeGraphOutputCsvWithJsonReference "full_output_summary_humanfinalConsistent.csv" "graphs_human_humanfinalConsistent.json" outputs_humanfinalConsistent
+        printfn " CSV summary written to 'full_output_summary_human_humanfinalConsistent.csv' "
+
+        (*// Run all graphs for mouseGenesMonika asynchronously 
         let! outputs = runAllWithGenes mouseGenesMonika
 
         // Write the CSV summary with compressed BMA strings 
         writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
-        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)."  *)
+        printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)."*)
     }
 
     outputAsync |> Async.RunSynchronously 
