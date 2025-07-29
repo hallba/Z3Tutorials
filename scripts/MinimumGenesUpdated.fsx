@@ -440,7 +440,10 @@ open types
 
 (*
 GeneIO:    
-    - Parse files for gene paths and interaction data 
+    - parsePath: parses a string of gene interaction paths, where each path consits of comma-separated genes
+    - readFile: reads a file of path stirngs line by line, parses each line into a list of gene paths, and logs how many raw paths are reduced to distinct path blocks 
+    - parseInteractions: parses a string describing a biological interaction between genes, to determine the direction and whether the activity is activating or inhibiting 
+    - reads a file of gene interactions, parses each into a structured object, and returns a lookup dictionary indexed by the interaction string 
 *)
 
 module GeneIO =
@@ -566,7 +569,15 @@ open GeneUtils
 
 (*
 GraphUtils: handles creating and visualising the graph from Z3 model results using MSAGL library
-
+    - makeGraphInternal: creates a directed biological interaction graph using the Z3 model and layout settings from gI
+        - makeNode: adds a circular node 
+        - makeedge: adds a directed edge from source and target in the graph
+        - getUsedNodes: checks if a gene should be included in the graph
+        - bmaVariableModel: formats a node for the BMA "Model" section 
+        - bmaVariableLayout: formats layout for the BMA "Layout" section 
+        - bmaRelationshipText: formats an edge as a BMA "Relationship" with source and target IDs and kind: activator / inhibitor
+        - idMapping: creates a mapping from node name to numeric ID, used in BMA JSON output, and later downstream for hierarchical clustering
+        - edgeToBmaRel: evalutes source and target nod types and looks up interaction metadata 
 *)
 module GraphUtils = 
     let makeGraphInternal (gI:GraphInput) =
@@ -771,50 +782,6 @@ let makeGraph (input:MakeGraphInput): GraphSummary =
         EdgeCount = edgeCount
         Config = input.config
     }
-
-(* let graphInputNext (this: GraphInput) =
-        let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) this.genes
-        let values = Array.map (fun var -> this.m.Eval(var)) variables
-        let constraints = Array.map2 (fun var value -> (this.ctx.MkEq(var,value))) variables values
-        this.s.Add(this.ctx.MkNot(this.ctx.MkAnd(constraints)))
-        match this.s.Check() with
-        | Status.SATISFIABLE -> 
-            printf "sat\n"
-            printGenes this.ctx this.s.Model this.genes
-            let used = countUsedGenes this.ctx this.genes this.s.Model
-            let result = makeGraph this.ctx this.s.Model this.s this.zGenes this.paths this.genes this.layout this.interactionInfo this.maxEdges this.inputGenes used this.Config
-            Some(result)
-        | Status.UNSATISFIABLE -> 
-            printf "unsat"
-            None
-        | _ -> failwith "unknown"
-
-    let graphInputExclude (this: GraphInput) (genes: string[]) =
-        let variables = Array.map (fun geneName -> this.ctx.MkBoolConst(sprintf "Used-%s" geneName)) genes
-        let constraints = Array.map (fun var -> (this.ctx.MkEq(var,this.ctx.MkFalse()))) variables 
-        this.s.Add(this.ctx.MkAnd(constraints))
-        match this.s.Check() with
-        | Status.SATISFIABLE -> 
-            printf "sat\n"
-            Some({ this with m = this.s.Model; s = this.s })
-        | Status.UNSATISFIABLE -> 
-            printf "unsat"
-            None
-        | _ -> failwith "unknown" *)
-        
-    (* let findAllEquivalentGraphs (g:  GraphInput) = 
-        let rec core (g: GraphInput) acc =
-            match graphInputNext g with 
-            | None -> acc
-            | Some(g') -> core g' (g'::acc)
-        g.s.Push()
-        let gc = g.ctx.MkIntConst("GeneCount")
-        let modelScore = sprintf "%O" (g.m.Eval(gc,true) )
-        let score = g.ctx.MkInt(modelScore)
-        g.s.Add(g.ctx.MkEq(gc,score))
-        let result = core g [g]
-        g.s.Pop()
-        result *)
 
 open GraphUtils
 
@@ -1152,7 +1119,6 @@ module GeneGraph =
         ]
 
 open GeneGraph
-(* modified initial function with additional step to collect all graphs into a list*)
 
 module AsyncHelpers = 
     // Main runner function
@@ -1170,6 +1136,8 @@ module AsyncHelpers =
 open AsyncHelpers
 
 module Compression = 
+
+    // Compresses a UTF-8 encoded input string using GZip, then encodes it as a Base64 string
     let compressToBase64 (input:string): string = 
             let bytes = Encoding.UTF8.GetBytes(input)
             use output = new MemoryStream()
@@ -1181,12 +1149,16 @@ module Compression =
 open Compression 
 
 module GraphRunner =
+    
+    // Represents the output of a graph generation run where "Graph": the BMA-compatible graph string, Base-64 compressed, and "Summary": metadata 
     type GraphOutput = {
         Graph: string // BMA-compatible string 
         Summary:GraphSummary // Full config + gene info for CSV export
     }
 
-    // Modified runAllWithGenes with an added timeout 
+    // Runs the "main" function across all graph configuraitons using a shared input gene set
+    // applied a timeout to each run, and collect all successful results 
+
     let runAllWithGenes (genes: string[]) = async {
         // Collect all graph outputs that are successfully computed
         let allOutputs = new List<GraphOutput>()
@@ -1377,11 +1349,10 @@ module IOSummary =
     (* Writes a CSV summarising a list of GraphOutput data
     The BMAString is included raw so the CSV opens cleanly in Excel and the BMAStirng can be directly copy-pasted into the BMA web app*)
 
-
     /// Write all full raw JSON BMA strings to a pretty-printed JSON file
     let writeBmaJsonFile (filename: string) (outputs: GraphOutput list) =
         use writer = new StreamWriter(filename)
-
+        
         for o in outputs do
             let rawJson = 
                 if o.Graph.StartsWith("H4sI") then
@@ -1455,12 +1426,15 @@ module IOSummary =
 open IOSummary 
 
 module Z3optimisedDendogram = 
+    
+    // Mapping of a gene to the set of edges it participates in within a specific graph 
     type GeneEdgeMapping = {
         GraphId: int 
         Gene:string 
         Edges: Set<string * string> // (source, target)
     }
 
+    // Parses a raw JSOn graph string to extract the set of edges as (source,target) tuples
     let extractEdgesFromJson (jsonStr: string): Set<string * string> = 
         let doc = JsonDocument.Parse(jsonStr)
         let model = doc.RootElement.GetProperty("Model")
@@ -1472,21 +1446,25 @@ module Z3optimisedDendogram =
                 if src <> null && tgt <> null then yield (src, tgt)
         } |> Set.ofSeq
 
-    // Load and parse all graphs.json entries
+    // Load and parse the JSON file containing many graphs and returns a list of GeneEdgeMappings
+    // for every gene in each graph, listing all edges involving that gene  
     let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
         let json = File.ReadAllText(filePath)
         let options = JsonSerializerOptions()
         options.PropertyNameCaseInsensitive <- true
+        // Deserialise JSON into list of GraphOutput records
         let graphs: GraphOutput list = JsonSerializer.Deserialize<GraphOutput list>(json, options)
-
+        
         graphs
         |> List.mapi (fun i graph ->
             let edges = extractEdgesFromJson graph.Graph
+            // Collect all unique genes involved in any edge
             let genes =
                 edges
                 |> Seq.collect (fun (src, tgt) -> [src; tgt])
                 |> Set.ofSeq
 
+            // For each gene, create a GeneEdgeMapping containing all edges involving it 
             genes
             |> Set.toList
             |> List.map (fun gene ->
@@ -1501,7 +1479,7 @@ module GeneSimilarityMatrix =
 
     open Z3optimisedDendogram
 
-    /// Merges edge sets for each unique gene across all graphs
+    // Group all GeneEdgeMapping entries by gene, then merges their edge sets so that each gene has a combined set of all edges it participates in
     let mergeGeneEdges (geneEdgeMaps: GeneEdgeMapping list) : Map<string, Set<string * string>> =
         geneEdgeMaps
         |> List.groupBy (fun m -> m.Gene)
@@ -1512,7 +1490,7 @@ module GeneSimilarityMatrix =
             |> Set.unionMany
         )
 
-    /// Computes pairwise Jaccard similarity between all unique gene pairs
+    // Computes pairwise Jaccard similarity between all unique gene pairs
     let computeJaccardSimilarityMatrix (mergedEdges: Map<string, Set<string * string>>) : Map<string * string, float> =
         let genes = Map.keys mergedEdges |> Seq.toArray
         [
@@ -1527,17 +1505,17 @@ module GeneSimilarityMatrix =
         ]
         |> Map.ofList
 
-    /// Convenience wrapper for full pipeline
+    // Convenience wrapper for full pipeline: given the entire gene-edges mapping, generate the complete similarity matrix
     let generateSimilarityMatrix (geneEdgeMaps: GeneEdgeMapping list) : Map<string * string, float> =
         geneEdgeMaps
         |> mergeGeneEdges
         |> computeJaccardSimilarityMatrix
-
+// Define the dendrogram node type used in hierarchical clustering 
 type DendroNode =
     | Leaf of string
     | Merge of DendroNode * DendroNode * float
 
-/// Flatten a dendrogram node to get all gene names inside it
+// Flatten a dendrogram node to get all gene names inside it, by recursively collecting all gene names contained in a dendrogram node 
 let rec flatten node =
     match node with
     | Leaf g -> Set.singleton g
@@ -1555,7 +1533,7 @@ let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode
         |> Seq.map (fun g -> g, Leaf g)
         |> Map.ofSeq
 
-    /// Compute similarity between two gene sets (average linkage)
+    // Compute similarity between two gene sets (average linkage)
     let clusterSimilarity (s1: Set<string>) (s2: Set<string>) =
         [ for g1 in s1 do
             for g2 in s2 do
@@ -1571,7 +1549,7 @@ let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode
             | [] -> -1.0 // no similarity found, assign lowest
             | sims -> sims |> List.average
 
-    /// Recursive clustering loop
+    // Recursive clustering loop which merges the 2 most similar clusters until there is only one entire cluster left
     let rec loop (clusters: Map<string, DendroNode>) : DendroNode =
         if Map.count clusters = 1 then
             // Done: return the single remaining cluster
@@ -1614,6 +1592,7 @@ let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode
 open Z3optimisedDendogram
 open GeneSimilarityMatrix
 
+// Process a single graph file: extract the mappings, compute similarity, build dendrogram
 let processGraphFile (filePath: string) =
     printfn $"Processing {filePath} ..."
     let geneEdgeMappings = extractGeneToEdgeMappings filePath
@@ -1622,23 +1601,25 @@ let processGraphFile (filePath: string) =
     // Return file and dendrogram for later use
     filePath, dendrogram
 
+// Process multiple graph files and return a list of (filename, dendrogram)
+let processGraphFiles (filePaths:string list) : (string * DendroNode) list =
+    filePaths |> List.map processGraphFile
+
+// Print summary info for each dendrogram, e.g: gene count in each dendrogram leaf cluster root
+let printDendrogramSummaries (dendrograms: (string * DendroNode) list) : unit =
+    dendrograms
+        |> List.iter (fun (file, dendro) ->
+            let genesInCluster = flatten dendro |> Set.count
+            printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
+        )
+
+// list containing graph names
 let graphFiles = 
     [ "graphs.json"
       "graphs_human_overlap_RAGEreceptors.json"
       "graphs_HSC_overlap_mouseRNAseq_final_consistent.json"
       "graphs_human_humanfinalConsistent.json" ]
-
-// Generate dendrograms from graphs
-let dendrograms =
-    graphFiles
-    |> List.map processGraphFile
-
-// Example use case: print gene count in each dendrogram leaf cluster root
-dendrograms
-|> List.iter (fun (file, dendro) ->
-    let genesInCluster = flatten dendro |> Set.count
-    printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
-)
+    
 
 module Main =
     let outputAsync = async {
@@ -1678,7 +1659,11 @@ module Main =
         printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
 
     }
+    // Process and print dendrograms 
+    let dendrograms = processGraphFiles graphFiles
+    printDendrogramSummaries dendrograms
 
-    outputAsync |> Async.RunSynchronously 
 
 open Main 
+
+outputAsync |> Async.RunSynchronously 
