@@ -66,6 +66,7 @@ OmniPathData:
     - Supports different datasets (OmniSource)
     - Uses CsvProvider for typed CSV data loading, to enable type-safe operations on data
 *)
+
 module OmniPathData =
     type OmniPath = CsvProvider<"http://omnipathdb.org/interactions?fields=sources&fields=references&&genesymbols=1", 
                                         Schema="Is_directed=bool,Consensus_inhibition=bool,Consensus_stimulation=bool">
@@ -149,6 +150,7 @@ GraphTypes:
     - Vertex: represents graph nodes with edges as OmniPath rows
     - InteractionType & InteractionInput describe types and details of interactions
 *)
+
 module GraphTypes = 
     type PartialPath = 
         {
@@ -255,9 +257,18 @@ module GraphBuilder =
 open GraphBuilder
 
 (*
-    - 
+PathFinding: 
+    - shortestPathLength: returns the length of the shortest path between source and target genes 
+    - allShortestPaths: returns all shortest paths between source and target 
+    - pairwisePathSearch: computes all shortest paths between every pair of genes in the array 
+    - oneDirectionalHubSearch: computes shortest paths from one central "hub" gene to all other genes (paths where the hub is the source, and other genes are targets)
+    - pairwiseHubSearch: computes both the downstream path from the source to target and upstream from target to source 
+    - OneDirectionalPathSearch: for each gene pair, finds the shortest path in either direction
+
 *)
+
 module PathFinding = 
+
     let shortestPathLength source target data = 
         let lookUp, vertices = edgesToVertex data
 
@@ -345,6 +356,7 @@ input gene sources, main in put configurations
 *)
 
 module types =
+    // Single node in the BMA tool format 
     type BmaVariable = {
                             id: int
                             name: string
@@ -354,6 +366,8 @@ module types =
                             granularity: int
                             description: string
                         }
+    
+    //  Represents a directed edge between the BMA variables 
     type BmaRelationship = {
                                 id: int
                                 source: int
@@ -361,24 +375,29 @@ module types =
                                 kind: string
                             }
 
+    //  Specifies the graph layout algorithm to be used when displaying the network 
     type LayoutSelection = MDS | Sugiyama | Ranking | FastIncremental
 
+    // Defines the source of raw data used for gene import 
     type DataSource = FileName of string | Data of string [] [] []
 
+    // Specifies the source of input genes for a graph
     type GeneData =  Demo | FromArray of string [] | FromFile of string
 
+    // Top-level config for generating a single gene interaction graph
     type MainInput = {
-        genesSource : GeneData
-        includeSelfLoops : Boolean
-        oneDirection : Boolean
-        maximiseEdges : Boolean
-        exclusions : string [] option
-        database : OmniSource
-        strictFilter : bool
+        genesSource : GeneData //Where to load genes from
+        includeSelfLoops : Boolean // Whether to include self-loop edges
+        oneDirection : Boolean // If true, paths are directional
+        maximiseEdges : Boolean // If true, prioritise dense connections
+        exclusions : string [] option // Optional list of genes to exclude
+        database : OmniSource // Interaction database to use
+        strictFilter : bool // Apply stricter constraints 
         hubGene : string option //all genes should be downstream of this if defined
-        source: Organism
+        source: Organism // Organism source for filtering 
     }
 
+    // Internal structure that holds all the data needed for building a graph
     type GraphInput = {
         ctx : Context
         m : Model
@@ -423,6 +442,7 @@ open types
 GeneIO:    
     - Parse files for gene paths and interaction data 
 *)
+
 module GeneIO =
     let parsePath (line:string) = 
         line.Split '#'
@@ -452,13 +472,13 @@ module GeneIO =
             description=fullDescription
             link=interaction
         }
-
     let readInteractionsFile name =
         let interactionType = new Dictionary<string,InteractionInput>()
         for line in File.ReadLines(name) do 
             let interaction = parseInteractions line
             interactionType.Add(interaction.link,interaction)
         interactionType
+
 open GeneIO
 
 (*
