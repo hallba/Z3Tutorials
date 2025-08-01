@@ -1353,29 +1353,31 @@ module IOSummary =
     let writeBmaJsonFile (filename: string) (outputs: GraphOutput list) =
         use writer = new StreamWriter(filename)
         
+        // Create empty JsonArray 
+        let jsonArray = JsonArray()
+        // Parse and add each JSON node to the array
         for o in outputs do
             let rawJson = 
                 if o.Graph.StartsWith("H4sI") then
                     // decompress base64 gzip to raw JSON string
                     let decompress (base64Str: string) =
                         let compressedBytes = Convert.FromBase64String(base64Str)
-                        use inputStream = new System.IO.MemoryStream(compressedBytes)
-                        use gzipStream = new System.IO.Compression.GZipStream(inputStream, System.IO.Compression.CompressionMode.Decompress)
-                        use reader = new System.IO.StreamReader(gzipStream)
+                        use inputStream = new MemoryStream(compressedBytes)
+                        use gzipStream = new IO.Compression.GZipStream(inputStream, IO.Compression.CompressionMode.Decompress)
+                        use reader = new StreamReader(gzipStream)
                         reader.ReadToEnd()
                     decompress o.Graph
                 else
                     o.Graph
-
-            // Parse raw JSON string into a JsonNode
             let jsonNode = JsonNode.Parse(rawJson)
+            jsonArray.Add(jsonNode)
+            
+        // Serialize entire array with indentation
+        let options = JsonSerializerOptions(WriteIndented = true)
+        let jsonString = jsonArray.ToJsonString(options)
 
-            // Serialize the JsonNode with indentation to string
-            let options = JsonSerializerOptions(WriteIndented = true)
-            let jsonString = jsonNode.ToJsonString(options)
-
-            // Write a single JSON object per line (no array brackets)
-            writer.WriteLine(jsonString)
+        // Write the full JSON array to the file
+        writer.Write(jsonString)
     
     /// Write CSV summary referencing the JSON file via an index column
     let writeGraphOutputCsvWithJsonReference (filenameCsv: string) (filenameJson: string) (outputs: GraphOutput list) = 
@@ -1750,7 +1752,7 @@ let graphFiles =
     
 
 module Main =
-    (*let outputAsync = async {
+    let outputAsync = async {
         
         // Run all graphs for humanRAGEREceptors asynchronously
         
@@ -1786,7 +1788,8 @@ module Main =
         writeGraphOutputCsvWithJsonReference "full_output_summary.csv" "graphs.json" outputs
         printfn $"CSV summary written to full_output_summary.csv with %d{outputs.Length} graph(s)." 
 
-    }*)
+    }
+
     // Process and print dendrograms 
     let dendrograms = processGraphFiles graphFiles
     printDendrogramSummaries dendrograms 
