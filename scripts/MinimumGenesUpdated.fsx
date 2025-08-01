@@ -1435,24 +1435,18 @@ module Z3optimisedDendogram =
         Edges: Set<string * string> // (source, target)
     }
     type BmaVariable = {
-        id: int
-        name: string
-        x: float
-        y: float
-        formula: string
-        granularity: int
-        description: string
+        Id: int
+        Name: string
     }
 
     type BmaRelationship = {
-        id: int
-        source: int
-        target: int
+        Id: int
+        FromVariable: int
+        ToVariable: int
         kind: string
     }
 
     type Model = {
-        Name: string
         Variables: BmaVariable list
         Relationships: BmaRelationship list
     }
@@ -1467,89 +1461,83 @@ module Z3optimisedDendogram =
         Layout: Layout
     }
 
-    // Given a Model with Variables and Relationships, extract edges as (sourceGene, targetGene) pairs
-    let extractEdgesFromModel (model: Model) : Set<string * string> =
-        // Create a lookup dictionary from variable ID to variable name
-        let idToName = 
-            model.Variables
-            |> Seq.map (fun v -> (v.id, v.name))
-            |> dict
+open Z3optimisedDendogram
 
-        // Map each relationship's FromVariable and ToVariable IDs to names and collect edges
-        model.Relationships
-        |> Seq.choose (fun rel ->
-            match idToName.TryGetValue(rel.source), idToName.TryGetValue(rel.target) with
-            | (true, src), (true, tgt) -> Some (src, tgt)
-            | _ -> None // If any ID is missing, skip this edge
-        )
-        |> Set.ofSeq
+// extracts a set of (source, target) edges from a BMA model 
+let extractEdgesFromModel (model:Model) : Set<string * string> = 
+    model.Relationships
+    |> List.map (fun r -> 
+        let src = model.Variables |> List.find (fun v -> v.Id = r.FromVariable)
+        let tgt = model.Variables |> List.find (fun v -> v.Id = r.ToVariable)
+        src.Name, tgt.Name
+    )
+    |> List.filter (fun (src, tgt) -> src <> tgt) // remove self-edges
+    |> Set.ofList
 
+// parses a new-style BMA JSON file and returns a list of gene-to-edge mappings 
+// each mapping represents a single gene and al (src, tgt) interactions it is involved in
+let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
+    let json = File.ReadAllText(filePath).Trim()
+    let options = JsonSerializerOptions()
+    options.PropertyNameCaseInsensitive <- true
 
-    
+    try
+        if json.StartsWith("[") then
+            // JSON array of GraphOutput objects
+            let graphs = JsonSerializer.Deserialize<GraphOutput list>(json, options)
+            graphs
+            |> List.mapi (fun i graph ->
+                let model = graph.Model
+                if obj.ReferenceEquals(model, null) then
+                    failwithf "Model is null at index %d" i
+                let edges = extractEdgesFromModel model
+                printfn "Graph %d: Extracted edges count = %d" i (Set.count edges)
+                edges |> Set.iter (fun (src, tgt) -> printfn "  Edge: %s -> %s" src tgt)
 
+                let genes =
+                    edges
+                    |> Seq.collect (fun (src, tgt) -> [src; tgt])
+                    |> Set.ofSeq
+                genes
+                |> Set.toList
+                |> List.map (fun gene ->
+                    let relatedEdges =
+                        edges |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
+                    { GraphId = i; Gene = gene; Edges = relatedEdges })
+            )
+            |> List.concat
 
-    // Load and parse the JSON file containing many graphs and returns a list of GeneEdgeMappings
-    // for every gene in each graph, listing all edges involving that gene  
-
-    let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
-        // Read entire JSON content from file
-        let json = File.ReadAllText(filePath)
-        let options = JsonSerializerOptions()
-        options.PropertyNameCaseInsensitive <- true
-
-        // Deserialize JSON into a list of GraphOutput records
-        let graphs: GraphOutput list = JsonSerializer.Deserialize<GraphOutput list>(json, options)
-
-        // For each graph in the list (with index)
-        graphs
-        |> List.mapi (fun i (graph: GraphOutput) ->
-            // Access the Model object directly (already deserialized)
+        elif json.StartsWith("{") then
+            // Single GraphOutput object
+            let graph = JsonSerializer.Deserialize<GraphOutput>(json, options)
             let model = graph.Model
-
-            // Defensive check: Model should not be null or empty
             if obj.ReferenceEquals(model, null) then
-                failwithf "Model is null at index %d" i
-
-            // Extract edges from the Model (pass the object, not JSON string)
+                failwithf "Model is null in %s" filePath
             let edges = extractEdgesFromModel model
-
-            // Collect all unique genes involved in any edge
             let genes =
                 edges
                 |> Seq.collect (fun (src, tgt) -> [src; tgt])
                 |> Set.ofSeq
-
-            // For each gene, create a GeneEdgeMapping containing all edges involving it
             genes
             |> Set.toList
             |> List.map (fun gene ->
                 let relatedEdges =
-                    edges
-                    |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
-                { GraphId = i; Gene = gene; Edges = relatedEdges })
-        )
-        |> List.concat
+                    edges |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
+                { GraphId = 0; Gene = gene; Edges = relatedEdges })
+
+        else
+            failwithf "Unrecognized JSON format in %s" filePath
+
+    with ex ->
+        failwithf "Failed to parse BMA graph from %s: %s" filePath ex.Message
 
 
 module GeneSimilarityMatrix =
 
-    open Z3optimisedDendogram
-
-    // Group all GeneEdgeMapping entries by gene, then merges their edge sets so that each gene has a combined set of all edges it participates in
-    let mergeGeneEdges (geneEdgeMaps: GeneEdgeMapping list) : Map<string, Set<string * string>> =
-        geneEdgeMaps
-        |> List.groupBy (fun m -> m.Gene)
-        |> Map.ofList
-        |> Map.map (fun _ mappings ->
-            mappings
-            |> List.map (fun m -> m.Edges)
-            |> Set.unionMany
-        )
-
     // Computes pairwise Jaccard similarity between all unique gene pairs
     let computeJaccardSimilarityMatrix (mergedEdges: Map<string, Set<string * string>>) : Map<string * string, float> =
         let genes = Map.keys mergedEdges |> Seq.toArray
-        [
+        let offDiagonalScores = seq {
             for i = 0 to genes.Length - 1 do
                 for j = i + 1 to genes.Length - 1 do
                     let g1, g2 = genes[i], genes[j]
@@ -1558,117 +1546,200 @@ module GeneSimilarityMatrix =
                     let union = Set.union e1 e2 |> Set.count
                     let score = if union = 0 then 0.0 else float inter / float union
                     yield ((g1, g2), score)
-        ]
-        |> Map.ofList
+                    yield ((g2, g1), score)
+        }
+        let diagonalScores = seq {
+            for g in genes do
+                yield ((g, g), 1.0)
+        }
+        // Combine off-diagonal and diagonal, diagonal overwrites if any conflict
+        Map.ofSeq (Seq.append offDiagonalScores diagonalScores)
 
-    // Convenience wrapper for full pipeline: given the entire gene-edges mapping, generate the complete similarity matrix
-    let generateSimilarityMatrix (geneEdgeMaps: GeneEdgeMapping list) : Map<string * string, float> =
-        geneEdgeMaps
-        |> mergeGeneEdges
-        |> computeJaccardSimilarityMatrix
-// Define the dendrogram node type used in hierarchical clustering 
-type DendroNode =
-    | Leaf of string
-    | Merge of DendroNode * DendroNode * float
 
-// Flatten a dendrogram node to get all gene names inside it, by recursively collecting all gene names contained in a dendrogram node 
-let rec flatten node =
-    match node with
-    | Leaf g -> Set.singleton g
-    | Merge (l, r, _) -> Set.union (flatten l) (flatten r)
+    // Export a similarity matrix as a CSV distance matrix file for Python plotting 
+    let exportSimilarityMatrixCsv (similarityMatrix : Map<string * string, float>) (filename: string) = 
+        // Extract all unique genes involved in the matrix and sort them alphabetically 
+        let genes = 
+            similarityMatrix
+            |> Map.toSeq
+            |> Seq.collect (fun ((g1, g2), _) -> [g1; g2])
+            |> Seq.distinct 
+            |> Seq.sort 
+            |> Seq.toArray 
 
-/// Main function to build a dendrogram from a similarity matrix
-let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode =
-    
-    // Create initial map of cluster ID -> DendroNode (Leaf nodes)
-    let initialClusters =
-        similarityMatrix
-        |> Map.toSeq
-        |> Seq.collect (fun ((g1, g2), _) -> [g1; g2])
-        |> Seq.distinct
-        |> Seq.map (fun g -> g, Leaf g)
-        |> Map.ofSeq
+        let size = genes.Length
 
-    // Compute similarity between two gene sets (average linkage)
-    let clusterSimilarity (s1: Set<string>) (s2: Set<string>) =
-        [ for g1 in s1 do
-            for g2 in s2 do
-                if g1 <> g2 then
-                    match similarityMatrix.TryFind (g1, g2) with
-                    | Some sim -> yield sim
-                    | None ->
-                        match similarityMatrix.TryFind (g2, g1) with
-                        | Some sim -> yield sim
-                        | None -> ()
-        ]
-        |> function
-            | [] -> -1.0 // no similarity found, assign lowest
-            | sims -> sims |> List.average
+        // Create a 2D array to hold distances (distance = 1 - similarity)
+        let distances = Array2D.create size size 0.0
 
-    // Recursive clustering loop which merges the 2 most similar clusters until there is only one entire cluster left
-    let rec loop (clusters: Map<string, DendroNode>) : DendroNode =
-        if Map.count clusters = 1 then
-            // Done: return the single remaining cluster
-            clusters |> Seq.head |> fun kvp -> kvp.Value
-        else
-            // Generate all unique cluster pairs
-            let clusterList = Map.toList clusters
-            let clusterPairs =
-                [ for i in 0 .. clusterList.Length - 2 do
-                    for j in i + 1 .. clusterList.Length - 1 do
-                        yield (clusterList[i], clusterList[j]) ]
+        // Fill the distance matrix 
+        for i in 0 .. size - 1 do 
+            for j in 0 .. size - 1 do 
+                if i = j then 
+                    // Distance from a gene to itself is zero 
+                    distances.[i,j] <- 0.0
+                else
+                    // Look up similarity score from the map 
+                    // Try both (i,j) and (j,i) because similiarity is symmetric 
+                    let sim = 
+                        match similarityMatrix.TryFind (genes.[i], genes[j]) with 
+                        | Some s -> s
+                        | None -> 
+                            match similarityMatrix.TryFind (genes.[j], genes.[i]) with 
+                            | Some s2 -> s2
+                            | None -> 0.0 // If no similarity found, assume zero similarity 
+                    // Convert similarity to distance for clustering 
+                    distances.[i,j] <- 1.0 - sim 
+        // Write the matrix to a CSV file with gene names as headers and row labels
+        use writer = StreamWriter(filename)
+        
+        // Write the header row (comma first, then gene names)
+        writer.Write(",")
+        writer.WriteLine(String.concat "," genes)
 
-            // Score each pair by computing similarity between their flattened gene sets
-            let scoredPairs =
-                clusterPairs
-                |> List.map (fun ((id1, n1), (id2, n2)) ->
-                    let s1, s2 = flatten n1, flatten n2
-                    let score = clusterSimilarity s1 s2
-                    ((id1, n1), (id2, n2), score))
+        //Write each row: gene name, then distance values
+        for i in 0 .. size - 1 do
+            // Create a string array: first element gene name, then all distances in the row formatted
+            let row = 
+                [| genes.[i] |]
+                |> Array.append [| for j in 0 .. size - 1 -> sprintf "%.5f" distances.[i,j] |]
+            // Write the CSV line 
+            writer.WriteLine(String.concat "," row)
 
-            // Pick the most similar pair
-            let ((idA, nA), (idB, nB), sim) = scoredPairs |> List.maxBy (fun (_, _, s) -> s)
-
-            // Merge them into a new node
-            let newNode = Merge(nA, nB, sim)
-            let newId = idA + "+" + idB
-
-            // Update cluster map
-            let newClusters =
-                clusters
-                |> Map.remove idA
-                |> Map.remove idB
-                |> Map.add newId newNode
-
-            // Repeat with new cluster map
-            loop newClusters
-
-    loop initialClusters
-
-open Z3optimisedDendogram
 open GeneSimilarityMatrix
 
+module DendrogramBuilder = 
 
-// Process a single graph file: extract the mappings, compute similarity, build dendrogram
-let processGraphFile (filePath: string) =
-    printfn $"Processing {filePath} ..."
-    let geneEdgeMappings = extractGeneToEdgeMappings filePath
-    let similarityMatrix = generateSimilarityMatrix geneEdgeMappings
-    let dendrogram = buildDendrogram similarityMatrix
-    // Return file and dendrogram for later use
-    filePath, dendrogram
+    // Define the dendrogram node type used in hierarchical clustering 
+    type DendroNode =
+        | Leaf of string
+        | Merge of DendroNode * DendroNode * float
 
-// Process multiple graph files and return a list of (filename, dendrogram)
-let processGraphFiles (filePaths:string list) : (string * DendroNode) list =
-    filePaths |> List.map processGraphFile
+    // Flatten a dendrogram node to get all gene names inside it
+    let rec flatten node =
+        match node with
+        | Leaf g -> Set.singleton g
+        | Merge (l, r, _) -> Set.union (flatten l) (flatten r)
 
-// Print summary info for each dendrogram, e.g: gene count in each dendrogram leaf cluster root
-let printDendrogramSummaries (dendrograms: (string * DendroNode) list) : unit =
-    dendrograms
-        |> List.iter (fun (file, dendro) ->
-            let genesInCluster = flatten dendro |> Set.count
-            printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
-        )
+    /// Builds a dendrogram using Jaccard similarity
+    let buildDendrogram (similarityMatrix: Map<string * string, float>) : DendroNode =
+
+        // Get all unique genes
+        let genes =
+            similarityMatrix
+            |> Map.toSeq
+            |> Seq.collect (fun ((g1, g2), _) -> [g1; g2])
+            |> Seq.distinct
+            |> Seq.toList
+
+        // Build a map from gene to its neighbors (i.e., adjacency list)
+        let neighbourMap =
+            genes
+            |> List.map (fun g ->
+                let neighbors =
+                    genes
+                    |> List.filter (fun other ->
+                        g <> other &&
+                            match similarityMatrix.TryFind(g,other) with
+                            | Some s when s > 0.0 -> true
+                            | _ -> false)
+                    |> Set.ofList
+                g, neighbors)
+            |> Map.ofList
+
+        // Create initial clusters (each gene is a leaf node)
+        let initialClusters =
+            genes
+            |> List.map (fun g -> g, Leaf g)
+            |> Map.ofList
+
+        // Define Jaccard similarity between two sets of genes
+        let jaccardSimilarity (set1: Set<string>) (set2: Set<string>) =
+                let n1 = set1 |> Seq.collect (fun g -> Map.find g neighbourMap) |> Set.ofSeq
+                let n2 = set2 |> Seq.collect (fun g -> Map.find g neighbourMap) |> Set.ofSeq
+                let unionSize = Set.union n1 n2 |> Set.count
+                if unionSize = 0 then 0.0
+                else
+                    let intersectionSize = Set.intersect n1 n2 |> Set.count
+                    float intersectionSize / float unionSize
+
+        // Recursive merging loop
+        let rec loop (clusters: Map<string, DendroNode>) : DendroNode =
+            if Map.count clusters = 1 then
+                let _, node = clusters |> Map.toSeq |> Seq.head
+                node 
+            else
+                // All unique cluster pairs
+                let clusterList = Map.toList clusters
+                let clusterPairs =
+                    [ for i in 0 .. clusterList.Length - 2 do
+                        for j in i + 1 .. clusterList.Length - 1 do
+                            yield clusterList[i], clusterList[j] ]
+
+                // Score using Jaccard
+                let scoredPairs =
+                    clusterPairs
+                    |> List.map (fun ((id1, n1), (id2, n2)) ->
+                        let s1 = flatten n1
+                        let s2 = flatten n2
+                        let score = jaccardSimilarity s1 s2
+                        ((id1, n1), (id2, n2), score))
+
+                let ((idA, nA), (idB, nB), sim) = scoredPairs |> List.maxBy (fun (_, _, s) -> s)
+                let newNode = Merge(nA, nB, sim)
+                let newId = idA + "+" + idB
+
+                loop (
+                    clusters
+                    |> Map.remove idA
+                    |> Map.remove idB
+                    |> Map.add newId newNode
+                )
+
+        loop initialClusters
+
+    // Process a single graph file: extract the mappings, compute similarity, build dendrogram
+    let processGraphFile (filePath: string) =
+        printfn $"Processing {filePath} ..."
+
+        // Extract gene-edge mappings from the graph JSON 
+        let geneEdgeMappings = extractGeneToEdgeMappings filePath
+
+        // Convert geneEdgeMappings (list) to Map<string, Set<string * string>>
+        let mergedEdgesMap =
+            geneEdgeMappings
+            |> List.map (fun mapping -> mapping.Gene, mapping.Edges)
+            |> Map.ofList
+
+        printfn "Merged %d genes." (Map.count mergedEdgesMap)
+        
+        // Compute similarity matrix once
+        let similarityMatrix = computeJaccardSimilarityMatrix mergedEdgesMap
+
+        // Export the similarity matrix as CSV for Python visualisation 
+        let csvFileName = filePath + "_similarity_matrix.csv"
+        exportSimilarityMatrixCsv similarityMatrix csvFileName
+        printfn $"Exported similarity matrix to {csvFileName}"
+
+        // Build dendrogram from the similarity matrix 
+        let dendrogram = buildDendrogram similarityMatrix
+        
+        // Return file and dendrogram for later use
+        filePath, dendrogram
+
+    // Process multiple graph files and return a list of (filename, dendrogram)
+    let processGraphFiles (filePaths:string list) : (string * DendroNode) list =
+        filePaths |> List.map processGraphFile
+
+    // Print summary info for each dendrogram, gene count in each dendrogram leaf cluster root
+    let printDendrogramSummaries (dendrograms: (string * DendroNode) list) : unit =
+        dendrograms
+            |> List.iter (fun (file, dendro) ->
+                let genesInCluster = flatten dendro |> Set.count
+                printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
+            )
+
+open DendrogramBuilder
 
 // list containing graph names
 let graphFiles = 
@@ -1718,8 +1789,7 @@ module Main =
     }*)
     // Process and print dendrograms 
     let dendrograms = processGraphFiles graphFiles
-    printDendrogramSummaries dendrograms
-
+    printDendrogramSummaries dendrograms 
 
 open Main 
 
