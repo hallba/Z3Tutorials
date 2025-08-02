@@ -482,7 +482,6 @@ module GeneIO =
             let interaction = parseInteractions line
             interactionType.Add(interaction.link,interaction)
         interactionType
-
 open GeneIO
 
 (*
@@ -565,7 +564,6 @@ module GeneUtils =
                     | Data(res) -> res
         Array.sumBy (Array.length >> float >> Math.Log10) data
         |> printf "10^%f alternatives to be searched\n"
-
 open GeneUtils
 
 (*
@@ -578,7 +576,30 @@ GraphUtils: handles creating and visualising the graph from Z3 model results usi
         - bmaVariableLayout: formats layout for the BMA "Layout" section 
         - bmaRelationshipText: formats an edge as a BMA "Relationship" with source and target IDs and kind: activator / inhibitor
         - idMapping: creates a mapping from node name to numeric ID, used in BMA JSON output, and later downstream for hierarchical clustering
-        - edgeToBmaRel: evalutes source and target nod types and looks up interaction metadata 
+        - edgeToBmaRel: evalutes source and target nod types and looks up interaction metadata
+    - makeGraph: creates a directed biological interaction graph summary based on the provided input configuration and biological data, bundles information from GraphInput into a
+    structured summary for downstream analysis 
+        Inputs:
+            - ctx: Z3 solver context for encoding SMT constraints 
+            - m: Z3 model resulting from the solver, encoding the satisfiable configuration 
+            - s: Z3 Optimise object used during solving, to extract objectives or constraints
+            - zGenes: Z3 sort representing the gene type in the SMT model 
+            - paths: A nested array of gene paths explored in the search 
+            - genes: array of all genes involved in the final graph 
+            - layoutAlgo: layout algorithm to be used for visualisation 
+            - intData: optional dictioinary mapping gene interactions 
+            - maxEdges: boolean flag to indicate if the graph was generated under the constraint of maximising edges
+            - input: array of original input genes supplied by the user or dataset
+            - used: number of input genes successfully used in the resulting graph 
+            - config: full configuration used to generate the graph, for reproducibility 
+
+        Outputs: Returns a "GraphSummary" record containing: 
+            - "Graph": the full "GraphInput" data structure representing the graph 
+            - "GeneCount": the number of nodes in the graph 
+            - "InputGeneCoverage": the number of input genes successfully included in the graph 
+            - "EdgeCount": number of edges / interactions present
+            - "Config": the full configuration used to create the graph
+
 *)
 module GraphUtils = 
     let makeGraphInternal (gI:GraphInput) =
@@ -728,62 +749,61 @@ module GraphUtils =
         let result = sprintf "{\"Model\": {\"Name\": \"Omnipath motif\",\"Variables\":[%s],\"Relationships\":[%s]},\"Layout\":{\"Variables\":[%s],\"Containers\":[]}}\n" varModel interactions varLayout
         result
 
-// Record type to hold all makeGraph input parameters 
+    // Record type to hold all makeGraph input parameters 
 
-type MakeGraphInput = {
-    ctx: Context
-    m: Model
-    s: Optimize
-    zGenes: Sort
-    paths: string [][][]
-    genes: string []
-    layoutAlgo: LayoutSelection
-    intData: Dictionary<string,InteractionInput> option
-    maxEdges: bool
-    input: string []
-    used: int
-    config: MainInput
-}
+    type MakeGraphInput = {
+        ctx: Context
+        m: Model
+        s: Optimize
+        zGenes: Sort
+        paths: string [][][]
+        genes: string []
+        layoutAlgo: LayoutSelection
+        intData: Dictionary<string,InteractionInput> option
+        maxEdges: bool
+        input: string []
+        used: int
+        config: MainInput
+    }
 
-let makeGraph (input:MakeGraphInput): GraphSummary =
-    let (gI:GraphInput) = {
-            ctx = input.ctx
-            m = input.m
-            zGenes = input.zGenes
-            paths = input.paths
-            genes = input.genes
-            layout = input.layoutAlgo
-            interactionInfo = input.intData
-            maxEdges = input.maxEdges
-            s = input.s
-            rotation = 0.
-            inputGenes = input.input
-            numberGenesUsed = input.used
+    let makeGraph (input:MakeGraphInput): GraphSummary =
+        let (gI:GraphInput) = {
+                ctx = input.ctx
+                m = input.m
+                zGenes = input.zGenes
+                paths = input.paths
+                genes = input.genes
+                layout = input.layoutAlgo
+                interactionInfo = input.intData
+                maxEdges = input.maxEdges
+                s = input.s
+                rotation = 0.
+                inputGenes = input.input
+                numberGenesUsed = input.used
+                Config = input.config
+        }
+
+        // Count number of genes
+        let geneCount = input.genes.Length
+
+        // Count number of edges / interactions 
+        let edgeCount = 
+            match input.intData with 
+            | Some dict -> dict.Count
+            | None -> 0
+            
+        // Count how many input genes appear in the graph 
+        let inputGeneCoverage = 
+            input.input |> Array.filter (fun gene -> Array.contains gene input.genes) |> Array.length
+
+        // Return the summary
+        {
+            Graph = gI
+            GeneCount = geneCount 
+            InputGeneCoverage = inputGeneCoverage
+            EdgeCount = edgeCount
             Config = input.config
-    }
-
-    // Count number of genes
-    let geneCount = input.genes.Length
-
-    // Count number of edges / interactions 
-    let edgeCount = 
-        match input.intData with 
-        | Some dict -> dict.Count
-        | None -> 0
-        
-    // Count how many input genes appear in the graph 
-    let inputGeneCoverage = 
-        input.input |> Array.filter (fun gene -> Array.contains gene input.genes) |> Array.length
-
-    // Return the summary
-    {
-        Graph = gI
-        GeneCount = geneCount 
-        InputGeneCoverage = inputGeneCoverage
-        EdgeCount = edgeCount
-        Config = input.config
-    }
-
+        }
 open GraphUtils
 
 (*
@@ -1093,9 +1113,13 @@ module MainSolver =
                                     | Some(_,_,lOrig) -> if lOrig <= l then () else shortest <- Some(source,target,l)
 
             failwith "Incomplete"
-
 open MainSolver
 
+(*
+GeneGraph: Defines the input gene set and systematically generated a list of all possible configuration options for graph construction
+    Notes: The current total number of configurations is 2 (oneDirection) x 2 (strictFilter) x 6 (database) x 3 (source) = 72 
+    If the commented options are included, the full space reaches 288
+*)
 module GeneGraph =
     let mouseGenesMonika = [| "Agps";"Coro7";"Epdr1";"Fth1";"Ftl1";"Mocs3";"Rap2b";"Serpina1a";"Sh3bp1";"Slc14a1";"Tgm2";"Upp1"|]
 
@@ -1118,11 +1142,13 @@ module GeneGraph =
                         source = source
                 }
         ]
-
 open GeneGraph
 
-module AsyncHelpers = 
-    // Main runner function
+(*
+AsyncHelper: a helper function that runs an asynchronous workflow with a timeout
+*)
+
+module AsyncHelper = 
     // Helper function: Adds timeout 
     let asyncWithTimeout (timeoutMs: int) (workflow: Async<'T>) : Async<'T option> = async {
         let task = Async.StartAsTask workflow
@@ -1134,11 +1160,14 @@ module AsyncHelpers =
         else
             return None
     }
-open AsyncHelpers
+open AsyncHelper
+
+(*
+Compression: Compresses a UTF-8 encoded input string using GZip, then encodes it as a Base64 string
+*)
 
 module Compression = 
-
-    // Compresses a UTF-8 encoded input string using GZip, then encodes it as a Base64 string
+    // Compression function
     let compressToBase64 (input:string): string = 
             let bytes = Encoding.UTF8.GetBytes(input)
             use output = new MemoryStream()
@@ -1146,8 +1175,13 @@ module Compression =
             gzip.Write(bytes, 0, bytes.Length)
             gzip.Close()
             Convert.ToBase64String(output.ToArray())
-
 open Compression 
+
+(*
+GraphRunner: runs the "main" graph generation function across all predefined configuration options , injecting 
+a shared set of input genes into each run. Applies a timeout to each run to avoid blocking indefinetely on
+unsatisfiable or long-running configurations, and collects all successful outputs 
+*)
 
 module GraphRunner =
     
@@ -1216,134 +1250,9 @@ module GraphRunner =
     }
 open GraphRunner
 
-module IOBinary = 
-
-    (* Serialise GeneData discriminated union into a binary format using a
-    tag-based encoding: 0 = Demo, 1 = FromArray, 2 = FromFile *)
-    let writeGenesSource (bw: BinaryWriter) (gs: GeneData) =
-        match gs with
-        | Demo -> 
-            bw.Write(0) // tag for Demo
-        | FromArray arr ->
-            bw.Write(1) // tag for FromArray
-            bw.Write(arr.Length)
-            for s in arr do
-                bw.Write(s)
-        | FromFile filename ->
-            bw.Write(2) // tag for FromFile
-            bw.Write filename
-
-    //Deserialise GeneData from binary format using tags
-    let readGenesSource (br: BinaryReader) : GeneData =
-        let tag = br.ReadInt32()
-        match tag with
-        | 0 -> Demo
-        | 1 ->
-            let length = br.ReadInt32()
-            let arr = Array.init length (fun _ -> br.ReadString())
-            FromArray arr
-        | 2 ->
-            let filename = br.ReadString()
-            FromFile filename
-        | _ -> failwithf "Unknown GenesSource tag: %d" tag
-
-    (* Write list of graph strings to a compact binary file 
-    Saves the BMA string, graph config, counts and gene source for each graph
-    Format: [int32 count] followed by [count x graph record]
-    *)
-    let writeGraphOutputBinary (filename: string) (data: GraphOutput list) = 
-        use bw = new BinaryWriter(File.Open(filename, FileMode.Create))
-        bw.Write data.Length
-        for item in data do
-            bw.Write(item.Graph)
-            let cfg = item.Summary.Config
-            bw.Write(cfg.database.ToString())
-            bw.Write(cfg.source.ToString())
-            bw.Write(cfg.includeSelfLoops)
-            bw.Write(cfg.oneDirection)
-            bw.Write(cfg.maximiseEdges)
-            bw.Write(cfg.strictFilter)
-            bw.Write(item.Summary.GeneCount)
-            bw.Write(item.Summary.InputGeneCoverage)
-            bw.Write(item.Summary.EdgeCount)
-
-            // Write genesSource using helper function
-            writeGenesSource bw cfg.genesSource
-
-    // Read a list of strings from custom binary file 
-    let readGraphOutputBinary (filename: string) : GraphOutput list =
-        use br = new BinaryReader(File.Open(filename, FileMode.Open))
-        let count = br.ReadInt32()
-        [ for _ in 1 .. count ->
-            let graph = br.ReadString()
-            // Parse database string back to OmniSource
-            let database = 
-                match br.ReadString() with
-                | "PPI" -> PPI
-                | "Regulon" -> Regulon
-                | "PTM" -> PTM
-                | "MiRNA" -> MiRNA
-                | "Pathways" -> Pathways
-                | "Combo" -> Combo
-                | s -> failwithf "Unknown database type: %s" s
-                
-            // Parse source string back to Organism
-            let source = 
-                match br.ReadString() with
-                | "Human" -> Human
-                | "Mouse" -> Mouse
-                | "Rat" -> Rat
-                | s -> failwithf "Unknown organism: %s" s
-
-            let selfLoops = br.ReadBoolean()
-            let oneDir = br.ReadBoolean()
-            let maxEdges = br.ReadBoolean()
-            let strict = br.ReadBoolean()
-            let geneCount = br.ReadInt32()
-            let coverage = br.ReadInt32()
-            let edgeCount = br.ReadInt32()
-
-            let cfg: MainInput = {
-                genesSource = readGenesSource br
-                includeSelfLoops = selfLoops
-                oneDirection = oneDir
-                maximiseEdges = maxEdges
-                exclusions = None
-                database = database
-                strictFilter = strict
-                hubGene = None
-                source = source
-            }
-            // Create a dummy GraphInput since we don't serialize the full graph context
-            let dummyGraphInput = {
-                ctx = new Context()
-                m = null
-                zGenes = null
-                paths = [||]
-                genes = [||]
-                layout = Sugiyama
-                interactionInfo = None
-                maxEdges = false
-                s = null
-                rotation = 0.0
-                inputGenes = [||]
-                numberGenesUsed = 0
-                Config = cfg
-            }
-
-            {
-                Graph = graph
-                Summary = {
-                    Graph = dummyGraphInput
-                    GeneCount = geneCount
-                    InputGeneCoverage = coverage
-                    EdgeCount = edgeCount
-                    Config = cfg
-                }
-            } : GraphOutput
-        ]
-
-open IOBinary 
+(*
+IOSummary: writes graph outputs and their metadata to both a structured CSV file and a full JSON file 
+*)
 
 module IOSummary = 
     
@@ -1428,7 +1337,9 @@ module IOSummary =
             |> Seq.toArray                                  // Convert the final filtered sequence into an array
 open IOSummary 
 
-
+(*
+Z3optimisedDendrogram: contains records in the correct format of the JSON pretty-printed files generated 
+*)
 module Z3optimisedDendogram = 
     
     // Mapping of a gene to the set of edges it participates in within a specific graph 
@@ -1437,11 +1348,14 @@ module Z3optimisedDendogram =
         Gene:string 
         Edges: Set<string * string> // (source, target)
     }
+
+    // Variable (node) in a BMA model 
     type BmaVariable = {
         Id: int
         Name: string
     }
 
+    // Directed relationship between 2 variables in the BMA model 
     type BmaRelationship = {
         Id: int
         FromVariable: int
@@ -1449,54 +1363,86 @@ module Z3optimisedDendogram =
         kind: string
     }
 
+    // Core model structure of a BMA graph 
     type Model = {
         Variables: BmaVariable list
         Relationships: BmaRelationship list
     }
 
+    // Layout metadata for visualising the BMA model in the web app 
     type Layout = {
         Variables: BmaVariable list
         Containers: obj list  // empty list in your JSON, so deserializes fine
     }
 
+    // Full output of the graph in BMA-compatible format
     type GraphOutput = {
         Model: Model
         Layout: Layout
     }
-
 open Z3optimisedDendogram
 
-// extracts a set of (source, target) edges from a BMA model 
-let extractEdgesFromModel (model:Model) : Set<string * string> = 
-    model.Relationships
-    |> List.map (fun r -> 
-        let src = model.Variables |> List.find (fun v -> v.Id = r.FromVariable)
-        let tgt = model.Variables |> List.find (fun v -> v.Id = r.ToVariable)
-        src.Name, tgt.Name
-    )
-    |> List.filter (fun (src, tgt) -> src <> tgt) // remove self-edges
-    |> Set.ofList
+(*
+GeneSimilarityMatrix: provides tools to
+    - extract edges from BMA-format graph models 
+    - map genes to their interacting edges
+    - compute pairwise Jaccard similarity scores between genes based on shared edges
+    - export the similarity matrix as a CSV distance matrix 
+*)
 
-// parses a new-style BMA JSON file and returns a list of gene-to-edge mappings 
-// each mapping represents a single gene and al (src, tgt) interactions it is involved in
-let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
-    let json = File.ReadAllText(filePath).Trim()
-    let options = JsonSerializerOptions()
-    options.PropertyNameCaseInsensitive <- true
+module GeneSimilarityMatrix = 
 
-    try
-        if json.StartsWith("[") then
-            // JSON array of GraphOutput objects
-            let graphs = JsonSerializer.Deserialize<GraphOutput list>(json, options)
-            graphs
-            |> List.mapi (fun i graph ->
+    // Extracts a set of (source, target) edges from a BMA model 
+    let extractEdgesFromModel (model:Model) : Set<string * string> = 
+        model.Relationships
+        |> List.map (fun r -> 
+            let src = model.Variables |> List.find (fun v -> v.Id = r.FromVariable)
+            let tgt = model.Variables |> List.find (fun v -> v.Id = r.ToVariable)
+            src.Name, tgt.Name
+        )
+        |> List.filter (fun (src, tgt) -> src <> tgt) // remove self-edges
+        |> Set.ofList
+
+    // Parses a new-style BMA JSON file and returns a list of gene-to-edge mappings 
+    // Each mapping represents a single gene and al (src, tgt) interactions it is involved in
+    let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
+        let json = File.ReadAllText(filePath).Trim()
+        let options = JsonSerializerOptions()
+        options.PropertyNameCaseInsensitive <- true
+
+        try
+            if json.StartsWith("[") then
+                // JSON array of GraphOutput objects
+                let graphs = JsonSerializer.Deserialize<GraphOutput list>(json, options)
+                graphs
+                |> List.mapi (fun i graph ->
+                    let model = graph.Model
+                    if obj.ReferenceEquals(model, null) then
+                        failwithf "Model is null at index %d" i
+                    let edges = extractEdgesFromModel model
+                    printfn "Graph %d: Extracted edges count = %d" i (Set.count edges)
+                    edges |> Set.iter (fun (src, tgt) -> printfn "  Edge: %s -> %s" src tgt)
+
+                    let genes =
+                        edges
+                        |> Seq.collect (fun (src, tgt) -> [src; tgt])
+                        |> Set.ofSeq
+                    genes
+                    |> Set.toList
+                    |> List.map (fun gene ->
+                        let relatedEdges =
+                            edges |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
+                        { GraphId = i; Gene = gene; Edges = relatedEdges })
+                )
+                |> List.concat
+
+            elif json.StartsWith("{") then
+                // Single GraphOutput object
+                let graph = JsonSerializer.Deserialize<GraphOutput>(json, options)
                 let model = graph.Model
                 if obj.ReferenceEquals(model, null) then
-                    failwithf "Model is null at index %d" i
+                    failwithf "Model is null in %s" filePath
                 let edges = extractEdgesFromModel model
-                printfn "Graph %d: Extracted edges count = %d" i (Set.count edges)
-                edges |> Set.iter (fun (src, tgt) -> printfn "  Edge: %s -> %s" src tgt)
-
                 let genes =
                     edges
                     |> Seq.collect (fun (src, tgt) -> [src; tgt])
@@ -1506,36 +1452,13 @@ let extractGeneToEdgeMappings (filePath: string) : GeneEdgeMapping list =
                 |> List.map (fun gene ->
                     let relatedEdges =
                         edges |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
-                    { GraphId = i; Gene = gene; Edges = relatedEdges })
-            )
-            |> List.concat
+                    { GraphId = 0; Gene = gene; Edges = relatedEdges })
 
-        elif json.StartsWith("{") then
-            // Single GraphOutput object
-            let graph = JsonSerializer.Deserialize<GraphOutput>(json, options)
-            let model = graph.Model
-            if obj.ReferenceEquals(model, null) then
-                failwithf "Model is null in %s" filePath
-            let edges = extractEdgesFromModel model
-            let genes =
-                edges
-                |> Seq.collect (fun (src, tgt) -> [src; tgt])
-                |> Set.ofSeq
-            genes
-            |> Set.toList
-            |> List.map (fun gene ->
-                let relatedEdges =
-                    edges |> Set.filter (fun (src, tgt) -> src = gene || tgt = gene)
-                { GraphId = 0; Gene = gene; Edges = relatedEdges })
+            else
+                failwithf "Unrecognized JSON format in %s" filePath
 
-        else
-            failwithf "Unrecognized JSON format in %s" filePath
-
-    with ex ->
-        failwithf "Failed to parse BMA graph from %s: %s" filePath ex.Message
-
-
-module GeneSimilarityMatrix =
+        with ex ->
+            failwithf "Failed to parse BMA graph from %s: %s" filePath ex.Message
 
     // Computes pairwise Jaccard similarity between all unique gene pairs
     let computeJaccardSimilarityMatrix (mergedEdges: Map<string, Set<string * string>>) : Map<string * string, float> =
@@ -1608,8 +1531,24 @@ module GeneSimilarityMatrix =
                 |> Array.append [| for j in 0 .. size - 1 -> sprintf "%.5f" distances.[i,j] |]
             // Write the CSV line 
             writer.WriteLine(String.concat "," row)
-
 open GeneSimilarityMatrix
+
+(*
+DendrogramBuilder: uses hierarchical clustering to group genes based on their similarity, measured using Jaccard similarity of 
+neighbouring edges in gene interaction graphs. 
+    - rec flatten node: recursively extracts all gene names contained in a dendrogram node
+    - buildDendrogram: takes a similarity matrix mapping pairs of genes and returns a dendrogram built by hierarchical clustering, by iteratively merging maxiimally 
+    similar clusters 
+    - processGraphFile: 
+        extracts gene-to-edge mappings
+        converts these mapping into a map
+        computes the similarity matrix between genes 
+        exports similarity matrix as a CSV 
+        builds dendrogram from similarity matrix 
+        returns the filename and the dendrogram 
+    - processGraphFiles: applied processGraphFiles to multiple graph files, returning a list of (filename, dendrogram) tuples
+    - printDendrogramSummaries: print a summary line per dendrogram, showing the total gene count in the root cluster 
+*)
 
 module DendrogramBuilder = 
 
@@ -1741,7 +1680,6 @@ module DendrogramBuilder =
                 let genesInCluster = flatten dendro |> Set.count
                 printfn $"File: {file}, genes in dendrogram root cluster: {genesInCluster}"
             )
-
 open DendrogramBuilder
 
 // list containing graph names
@@ -1751,7 +1689,14 @@ let graphFiles =
       "graphs_HSC_overlap_mouseRNAseq_final_consistent.json"
       "graphs_human_humanfinalConsistent.json" ]
     
+(*
+Main: asynchronous workflow to run graph processing tasks on multiple gene sets, writes summary 
+CSVs with compressed graph outputs, and then processes dendrograms from a list of graph files, printing summaries
 
+    NOTES ON FILE NAMES AND ADJUSTABILITY: 
+        - the CSV and JSON filenames used for input and output are hardcoded as string literals
+
+*)
 module Main =
     let outputAsync = async {
         
@@ -1794,7 +1739,6 @@ module Main =
     // Process and print dendrograms 
     let dendrograms = processGraphFiles graphFiles
     printDendrogramSummaries dendrograms 
-
 open Main 
 
-//outputAsync |> Async.RunSynchronously 
+outputAsync |> Async.RunSynchronously 
