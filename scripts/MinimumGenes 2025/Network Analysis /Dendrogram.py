@@ -9,9 +9,6 @@ csv_files = [
     "/Users/lydialichen/internship25/Z3Tutorials/scripts/graphs_HSC_overlap_mouseRNAseq_final_consistent.json_similarity_matrix.csv", 
     "/Users/lydialichen/internship25/Z3Tutorials/scripts/graphs_human_humanfinalConsistent.json_similarity_matrix.csv", 
     "/Users/lydialichen/internship25/Z3Tutorials/scripts/graphs_human_overlap_RAGEreceptors.json_similarity_matrix.csv"
-
-
-
 ]
 
 def plot_dendrograms_from_csv(csv_paths):
